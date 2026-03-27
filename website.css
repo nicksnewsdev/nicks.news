@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Mono:wght@400;700&display=swap');
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+#website {
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    background-color: #0a0a0a;
+    overflow: hidden;
+}
+
+.terminal {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    margin: 10px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    border: 2px solid #8c64d8;
+    border-radius: 5px;
+    font-family: 'Noto Sans Mono';
+}
+
+.terminal_user {
+    padding: 10px 20px;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #ffffffc5;
+}
+
+.terminal_website {
+    padding: 0 20px;
+    font-size: calc(4px + 1vw);
+    margin-bottom: 10px;
+    line-height: 1;
+    white-space: pre;
+    color: #ffffffc5;
+}
+
+.terminal_prompt {
+    color: #ffffffc5;
+}
+
+.terminal_color {
+    color: #8c64d8;
+}
+
+.terminal_header {
+    padding: 0 20px;
+    font-size: 1rem;
+    line-height: 1;
+    margin-top: -5px;
+    white-space: pre;
+    color: #8c64d8;
+}
+
+.terminal_content {
+    padding: 0 20px;
+    font-size: 1rem;
+    line-height: 1;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    white-space: pre-wrap;
+    color: #ffffffc5;
+}
