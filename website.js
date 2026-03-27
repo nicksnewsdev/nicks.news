@@ -18,7 +18,7 @@ const WEBSITE = () => {
 
             <p class="terminal_header"><span class="terminal_prompt">$ ~</span> About Me</p>
             <pre class="terminal_content">
-I'm a 18-year-old programmer based in Brandenburg, Germany with an 
+I'm an 18-year-old programmer based in Brandenburg, Germany with an 
 interest in computer science and low-level game design. Looking
 ahead, I aim to transition into quantitative trading environments
 for software development.
