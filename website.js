@@ -23,7 +23,7 @@ I'm an 18-year-old programmer based in Brandenburg, Germany with an interest in 
 
             <p class="terminal_header"><span class="terminal_prompt">$ ~</span> My Technologies</p>
             <pre class="terminal_content">
-I have experience with a variety of programming languages such as JavaScript, Lua, Python, and more. However, I'm currently aiming to improve my programming expertise by learning C++ and Rust. I do not support excessive use of artificial intellegency for programming
+I have experience with a variety of programming languages such as JavaScript, Lua, Python, and more. However, I'm currently aiming to improve my programming expertise by learning C++ and Rust. I do not support excessive use of artificial intellegency for programming.
             </pre>
 
             <p class="terminal_header"><span class="terminal_prompt">$ ~</span> Contact Me</p>
