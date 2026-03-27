@@ -40,7 +40,13 @@
     margin-bottom: 10px;
     line-height: 1;
     white-space: pre;
+    -webkit-overflow-scrolling: touch;
     color: #ffffffc5;
+}
+
+.terminal_website pre {
+    text-size-adjust: none;
+    -webkit-text-size-adjust: none;
 }
 
 .terminal_prompt {
