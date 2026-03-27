@@ -70,6 +70,7 @@
     padding: 0 20px;
     font-size: 1rem;
     line-height: 1;
+    max-width: 80vw;
     margin-top: 10px;
     margin-bottom: 10px;
     white-space: pre-wrap;
