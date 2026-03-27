@@ -36,7 +36,7 @@
 
 .terminal_website {
     padding: 0 20px;
-    font-size: calc(4px + 1vw);
+    font-size: 1.2vw;
     margin-bottom: 10px;
     line-height: 1;
     white-space: pre;
