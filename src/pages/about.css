@@ -16,10 +16,11 @@
 
 .header_logo {
     width: 12vw;
-    height: 15vh;
+    height: 16vh;
     display: flex;
     align-items: center;
     overflow: hidden;
+    flex: 1;
 }
 
 .header_image {
