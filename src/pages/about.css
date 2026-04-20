@@ -69,7 +69,16 @@
 }
 
 @media (max-width: 1250px) {
-    .header_sidebar {
+    .header_logo {
         display: none;
+    }
+}
+
+@media (max-width.: 1250px) {
+    .header_socials {
+        height: 12vh;
+        width: 0;
+        flex-direction: column;
+        align-items: center;
     }
 }
