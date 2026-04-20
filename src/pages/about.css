@@ -74,7 +74,7 @@
     }
 }
 
-@media (max-width.: 1250px) {
+@media (max-width: 1250px) {
     .header_socials {
         height: 12vh;
         width: 0;
