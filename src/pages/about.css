@@ -33,6 +33,7 @@
     }
     .header_image {
         width: 3vw
+        margin-left: -7px;
         height: auto;
         filter: drop-shadow(100vw 0 0 var(--color));
         transform: translateX(-100vw);
