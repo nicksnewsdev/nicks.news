@@ -76,9 +76,10 @@
 
 @media (max-width: 1250px) {
     .header_socials {
-        height: 12vh;
-        width: 0;
+        height: 48vh;
+        width: 3vw;
         flex-direction: column;
         align-items: center;
+        flex: 1;
     }
 }
