@@ -8,10 +8,35 @@
     align-items: stretch;
 }
 
-.header_sidebar {
+@media (max-width: 900px) {
+    .about_header {
+        flex-direction: column;
+        justify-content: center;
+    }
+}
+
+.header_bar {
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+    .header_bar {
+        flex-direction: row;
+    }
+}
+
+@media (max-width: 900px) {
+    .header_socials {
+        flex-direction: row;
+    }
+}
+
+@media (max-width: 370px) {
+    .header_bar {
+        display: none;
+    }
 }
 
 .header_logo {
@@ -19,32 +44,41 @@
     height: 16vh;
     display: flex;
     align-items: center;
+    justify-content: center;
     overflow: hidden;
     flex: 1;
 }
 
+@media (max-width: 1200px) {
+    .header_logo {
+        width: 5vw;
+        max-height: 6vh;
+    }
+}
+
+@media (max-width: 900px) {
+    .header_logo {
+        max-width: 10vw;
+        min-height: 6vh;
+    }
+}
+
 .header_image {
-    width: 10vw;
+    width: 9vw;
     height: auto;
     filter: drop-shadow(100vw 0 0 var(--color));
     transform: translateX(-100vw);
 }
 
 @media (max-width: 1200px) {
-    .header_logo {
-        width: 4vw;
-        max-height: 5vh;
-    }
-    
     .header_image {
-        width: 3vw
-        margin-left: -7px;
+        width: 3.5vw;
     }
 }
 
 @media (max-width: 900px) {
-    .header_logo {
-        display: none;
+    .header_image {
+        width: 6vw;
     }
 }
 
@@ -58,7 +92,7 @@
 
 @media (max-width: 1200px) {
     .header_socials {
-        width: 4vw;
+        width: 5vw;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -68,7 +102,19 @@
 
 @media (max-width: 900px) {
     .header_socials {
-        display: none;
+        flex-direction: row;
+    }
+}
+
+.header_socials_handle {
+    margin-left: 4px;
+    display: none;
+    color: var(--color);
+}
+
+@media (max-width: 900px) {
+    .header_socials_handle {
+        display: flex;
     }
 }
 
@@ -92,12 +138,55 @@
 
 @media (hover: hover) {
     .socials_icon:hover {
-        stroke-width: 1.7;
         color: var(--color);
     }
 }
 
 .header_content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.about_section {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+}
+
+@media (max-width: 900px) {
+    .about_section {
+        flex-direction: column;
+    }
+}
+
+.section_bar {
+    width: 12vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+@media (max-width: 1200px) {
+    .section_bar {
+        max-width: 5vw;
+    }
+}
+
+@media (max-width: 900px) {
+    .section_bar {
+        display: none;
+    }
+}
+
+.section_icon {
+    width: 5vw;
+    height: auto;
+    stroke-width: 1.5;
+}
+
+.section_content {
     display: flex;
     flex-direction: column;
     flex: 1;
