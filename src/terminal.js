@@ -50,15 +50,15 @@ const TERMINAL = () => {
         <div class='navigation'>
             <nav class='controls'> 
                 <a href='#about' class='controls_element'> 
-                    <svg class='icon' xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" height="14" width="14"><path d="M8 7a4 4 0 1 0 8 0 4 4 0 0 0 -8 0" stroke-width="2"></path><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" stroke-width="2"></path></svg>
+                    <svg class='icon' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" height="14" width="14"><path d="M8 7a4 4 0 1 0 8 0 4 4 0 0 0 -8 0" stroke-width="2"></path><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" stroke-width="2"></path></svg>
                     <span>About</span>
                 </a>
                 <a href='#experience' class='controls_element'> 
-                    <svg class='icon' xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" height="14" width="14"><path d="M19 4v16H7a2 2 0 0 1 -2 -2V6a2 2 0 0 1 2 -2h12z" stroke-width="2"></path><path d="M19 16H7a2 2 0 0 0 -2 2" stroke-width="2"></path><path d="M9 8h6" stroke-width="2"></path></svg>
+                    <svg class='icon' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" height="14" width="14"><path d="M19 4v16H7a2 2 0 0 1 -2 -2V6a2 2 0 0 1 2 -2h12z" stroke-width="2"></path><path d="M19 16H7a2 2 0 0 0 -2 2" stroke-width="2"></path><path d="M9 8h6" stroke-width="2"></path></svg>
                     <span>Experience</span>
                 </a>
                 <a href='#projects' class='controls_element'> 
-                    <svg class='icon' xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" height="14" width="14"><path d="M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2H5a2 2 0 0 1 -2 -2V6a2 2 0 0 1 2 -2" stroke-width="2"></path></svg>
+                    <svg class='icon' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" height="14" width="14"><path d="M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2H5a2 2 0 0 1 -2 -2V6a2 2 0 0 1 2 -2" stroke-width="2"></path></svg>
                     <span>Projects</span>
                 </a>
             </nav>
@@ -93,7 +93,7 @@ const TERMINAL = () => {
         const INFORMATION_DIV = document.querySelector('.information');
         if (!INFORMATION_DIV) return;
         const NOW = new Date();
-        INFORMATION_DIV.innerHTML = `${NOW.toLocaleTimeString()} <span class='credit'>by nicksnewsdev</span>`;
+        INFORMATION_DIV.innerHTML = `${NOW.toLocaleTimeString()} <a href='https://www.streamlinehq.com/' target='_blank' rel='noopener noreferrer' class='credit'>Icons on Streamlinehq</a>`;
     }; 
 
     TIME();
