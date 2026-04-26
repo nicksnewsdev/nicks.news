@@ -16,7 +16,7 @@ export const PROJECTS = () => {
                         </div>
                         <div class='box project_content'>
                             <h1>Portfolio</h1>
-                            <p>A portfolio about me and personal projects. Fully open-source and freely available for anyone to view on GitHub.</p>  
+                            <p>A portfolio about me and my personal projects. Fully open-source and freely available for anyone to view on GitHub.</p>  
                         </div>
                     </div>
                     <div class='project_section'>
