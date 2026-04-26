@@ -41,6 +41,16 @@ export const ABOUT = () => {
                 <svg class='header_image section_icon' viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path fill="currentColor" fill-rule="evenodd" d="M7.333 3.233c-1.463-.681-3.68-1.043-5.755.653A.667.667 0 0 0 1.333 4.402v8.265a.667.667 0 0 0 1.089.516c1.824-1.49 3.823-.873 4.911-.17V3.233zm1.333 0v9.779c1.089-.704 3.087-1.32 4.912.17a.667.667 0 0 0 1.088-.516V4.402a.667.667 0 0 0-.244-.516c-2.076-1.696-4.293-1.334-5.756-.653z" clip-rule="evenodd" stroke-width="0"></path></svg>
             </div>
         </div>
+        <div class='about_section'>
+            <div class='box section_bar'>
+                <svg class='header_image section_icon' viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path fill="currentColor" fill-rule="evenodd" d="M3.333 13.333a2 2 0 0 1-2-2V4.667a2 2 0 0 1 2-2h9.334a2 2 0 0 1 2 2v6.666a2 2 0 0 1-2 2H3.333zM5.083 5.48a.667.667 0 1 0-.833 1.04l2.5 2a2 2 0 0 0 2.5 0l2.5-2a.667.667 0 1 0-.833-1.04l-2.5 2a.667.667 0 0 1-.834 0l-2.5-2z" clip-rule="evenodd" stroke-width="0"></path></svg>
+            </div>
+            <div class='box section_content'>
+                <h1>Contact</h1>
+                <p>For professional requests, you can reach me at <span class='credit'>contact@nicks.news</span></p>
+                <p>If your reason for contacting me is non-professional, you can reach me through any of my social media accounts.</p>
+            </div>
+        </div>
     </div>
     `;
 };
