@@ -44,13 +44,6 @@
     flex-shrink: 0;
 }
 
-@media (max-width: 12000px) {
-    .project_media {
-        width: 20vw;
-        flex-direction: row;
-    }
-}
-
 @media (max-width: 900px) {
     .project_media {
         width: 100%;
