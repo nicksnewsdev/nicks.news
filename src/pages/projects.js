@@ -19,18 +19,6 @@ export const PROJECTS = () => {
                             <p>A portfolio about me and my personal projects. Fully open-source and freely available for anyone to view on GitHub.</p>  
                         </div>
                     </div>
-                    <div class='project_section'>
-                        <div class='project_media'>
-                            <div class='box project_logo'></div>
-                            <div class='box project_socials'>
-                                <p>...</p>
-                            </div>
-                        </div>
-                        <div class='box project_content'>
-                            <h1>Coming Soon</h1>
-                            <p>...</p>
-                        </div>
-                    </div>
                 </div>   
             </div>
         </div>
