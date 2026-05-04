@@ -49,6 +49,7 @@ export const ABOUT = () => {
                 <h1>Contact</h1>
                 <p>For professional requests, you can reach me at <span class='credit'>contact@nicks.news</span></p>
                 <p>If your reason for contacting me is non-professional, you can reach me through any of my social media accounts.</p>
+                <p>Misuse or unecesarry messaging will lead to communication cutoffs.</p>
             </div>
         </div>
     </div>
