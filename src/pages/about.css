@@ -44,6 +44,7 @@
     height: 16vh;
     display: flex;
     align-items: center;
+    position: relative;
     justify-content: center;
     overflow: hidden;
     flex: 1;
@@ -66,7 +67,14 @@
 .header_image {
     width: 9vw;
     height: auto;
-    filter: drop-shadow(100vw 0 0 var(--color));
+    filter:
+        drop-shadow(100vw -6px 0 red)
+        drop-shadow(100vw -4px 0 orange)
+        drop-shadow(100vw -2px 0 yellow)
+        drop-shadow(100vw 0 0 green)
+        drop-shadow(100vw 2px 0 blue)
+        drop-shadow(100vw 4px 0 indigo)
+        drop-shadow(100vw 6px 0 violet);
     transform: translateX(-100vw);
 }
 
