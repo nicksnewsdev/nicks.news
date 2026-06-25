@@ -7,7 +7,7 @@ const DARK_ICON = `<svg class='icon' xmlns="http://www.w3.org/2000/svg" viewBox=
 
 const TERMINAL_DIV = document.getElementById('terminal');
 
-const PAGES = () => {
+const PAGES = async () => {
     const HASH = window.location.hash || '#about';
     const CONTENT_DIV = document.getElementById('content');
     
@@ -16,7 +16,14 @@ const PAGES = () => {
     if (HASH === '#about') CONTENT_DIV.innerHTML = ABOUT();
     else if (HASH === '#experience') CONTENT_DIV.innerHTML = EXPERIENCE();
     else if (HASH === '#projects') CONTENT_DIV.innerHTML = PROJECTS();
+    else if (HASH === '#solvr') {
+        const RESPONSE = await fetch('solvr.html');
+        const DATA = await RESPONSE.text();
+        CONTENT_DIV.innerHTML = DATA;
+    }
 };
+
+window.addEventListener('hashchange', PAGES);
 
 window.addEventListener('hashchange', PAGES);
 
