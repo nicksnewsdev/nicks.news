@@ -16,11 +16,6 @@ const PAGES = async () => {
     if (HASH === '#about') CONTENT_DIV.innerHTML = ABOUT();
     else if (HASH === '#experience') CONTENT_DIV.innerHTML = EXPERIENCE();
     else if (HASH === '#projects') CONTENT_DIV.innerHTML = PROJECTS();
-    else if (HASH === '#solvr') {
-        const RESPONSE = await fetch('solvr.html');
-        const DATA = await RESPONSE.text();
-        CONTENT_DIV.innerHTML = DATA;
-    }
 };
 
 window.addEventListener('hashchange', PAGES);
