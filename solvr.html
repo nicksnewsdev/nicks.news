@@ -1,0 +1,2936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>solvr.js</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400&family=Inter:wght@300;400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/TextPlugin.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/nerdamer.core.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/Algebra.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/Calculus.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/Solve.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #0f0f0f;
+            --text-primary: #ffffff;
+            --text-secondary: #777777;
+            --text-error: #ff5555;
+            --font-math: 'JetBrains Mono', monospace;
+            --font-ui: 'Inter', sans-serif;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: var(--font-ui);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        #app-container {
+            width: 80%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #app-container.is-empty #output-wrapper {
+            margin-top: 0;
+            max-height: 0;
+            height: 0;
+            pointer-events: none;
+        }
+
+        #app-container.is-empty #output {
+            min-height: 0;
+        }
+
+        #app-container.has-preview #input-preview {
+            max-height: 8rem;
+            margin-top: 0.75rem;
+            opacity: 0.55;
+            transform: translateY(0);
+        }
+
+        input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 3rem;
+            font-family: var(--font-math);
+            text-align: center;
+            font-weight: 300;
+            caret-color: var(--text-secondary);
+        }
+
+        input::placeholder {
+            color: #2a2a2a;
+        }
+
+        #input-preview {
+            width: 80vw;
+            max-width: 80vw;
+            max-height: 0;
+            margin-top: 0;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(-0.35rem);
+            overflow: hidden;
+            pointer-events: none;
+            transition: opacity 0.24s ease, transform 0.24s ease, max-height 0.24s ease, margin-top 0.24s ease;
+        }
+
+        #input-preview .katex-display {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+        }
+
+        #output-wrapper {
+            width: 80vw;
+            max-width: 80vw;
+            margin-top: 2.5rem;
+            max-height: 45vh;
+            overflow: hidden;
+            scrollbar-width: none;
+        }
+
+        #output-wrapper::-webkit-scrollbar {
+            display: none;
+            width: 10px;
+            height: 10px;
+        }
+
+        #output-wrapper.scrollbars-visible {
+            scrollbar-width: thin;
+            scrollbar-color: #333333 transparent;
+        }
+
+        #output-wrapper.scrollbars-visible.scroll-x {
+            overflow-x: auto;
+        }
+
+        #output-wrapper.scrollbars-visible.scroll-y {
+            overflow-y: auto;
+        }
+
+        #output-wrapper.scrollbars-visible::-webkit-scrollbar {
+            display: block;
+        }
+
+        #output-wrapper::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #output-wrapper::-webkit-scrollbar-thumb {
+            background: #333333;
+            border-radius: 999px;
+        }
+
+        #output {
+            text-align: center;
+            min-height: 8rem;
+            opacity: 0;
+            width: max-content;
+            min-width: 100%;
+        }
+
+        #output.loading {
+            width: 100%;
+            min-width: 100%;
+            min-height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+        }
+
+        .solvr-loader {
+            width: 2.2rem;
+            height: 2.2rem;
+            display: block;
+        }
+
+        .katex-display {
+            font-size: 2.2rem;
+            margin: 0;
+            color: var(--text-secondary);
+            overflow: visible;
+            scrollbar-width: none;
+        }
+
+        .katex .mord.mtight { opacity: 0.7; }
+    </style>
+</head>
+<body>
+    <div id="app-container" class="is-empty">
+        <input type="text" id="query" autocomplete="off" spellcheck="false" autofocus>
+        <div id="input-preview"></div>
+        <div id="output-wrapper">
+            <div id="output"></div>
+        </div>
+    </div>
+
+    <script>
+        const solvr_math = math.create(math.all, { number: 'BigNumber', precision: 256 });
+        const solvr_full_integer_digit_limit = 50000;
+        const solvr_factorial_limit = 10000;
+        const solvr_scientific_digit_limit = 18;
+        const solvr_scientific_precision = 16;
+
+        const solvr_high_precision_constants = {
+            pi: '3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679',
+            tau: '6.2831853071795864769252867665590057683943387987502116419498891846156328125724179972560696506842341358',
+            e: '2.7182818284590452353602874713526624977572470936999595749669676277240766303535475945713821785251664274',
+            phi: '1.6180339887498948482045868343656381177203091798057628621354486227052604628189024497072072041893911374',
+            gamma: '0.5772156649015328606065120900824024310421593359399235988057672348848677267776646709369470632917467495',
+            catalan: '0.9159655941772190150546035149323841107741493742816721342664981196217630197762547694793565129261151062',
+            sqrt2: '1.4142135623730950488016887242096980785696718753769480731766797379907324784621070388503875343276415727',
+            sqrt3: '1.7320508075688772935274463415058723669428052538103806280558069794519330169088000370811461867572485757',
+            ln2: '0.6931471805599453094172321214581765680755001343602552541206800094933936219696947156058633269964186875',
+            ln10: '2.302585092994045684017991454684364207601101488628772976033327900967572609677352480235055911014978',
+            apery: '1.202056903159594285399738161511449990764986292340498881792271555341838205786313090186455873609335258',
+            plastic: '1.324717957244746025960908854478097340734404056901733364534015050302827851245547594054699347981787280',
+            silver: '2.4142135623730950488016887242096980785696718753769480731766797379907324784621070388503875343276415727',
+            glaisher: '1.282427129100622636875342568869791727767688927325001192063740021740406308858826461129736491958202374',
+            khinchin: '2.685452001065306445309714835481795693820382293994462953051152002801141174931847697',
+            omega: '0.5671432904097838729999686622103555497538157871865125081351310792230457930866845666932194469617522946'
+        };
+
+        const solvr_high_precision_constant_pattern = new RegExp(`\\b(${Object.keys(solvr_high_precision_constants).sort((a, b) => b.length - a.length).join('|')})\\b(?!\\s*\\()`, 'gi');
+
+        const solvr_known_words = new Set([
+            'sin', 'cos', 'tan', 'sec', 'csc', 'cot',
+            'asin', 'acos', 'atan', 'arcsin', 'arccos', 'arctan',
+            'sinh', 'cosh', 'tanh', 'sqrt', 'log', 'ln', 'exp', 'abs',
+            'pi', 'tau', 'phi', 'e', 'gamma', 'catalan', 'sqrt2', 'sqrt3', 'ln2', 'ln10', 'apery', 'plastic', 'silver', 'glaisher', 'khinchin', 'omega', 'deg', 'nthroot', 'nroot', 'root', 'limit', 'lim', 'int', 'defint', 'integrate', 'diff', 'derivative', 'deriv', 'derive', 'differentiate', 'sum', 'to', 'of', 'as', 'for', 'with', 'respect', 'wrt',
+            'infinity', 'inf', 'dx', 'dy', 'dz'
+        ]);
+
+        const solvr_no_answer = '\\text{No answer found}';
+
+        function solvr_has_non_real_marker(value) {
+            let text = String(value === undefined || value === null ? '' : value).trim();
+            if (!text || text === '[]') return true;
+            if (/undefined|NaN|complex|imaginary/i.test(text)) return true;
+            if (/(^|[^a-zA-Z])i([^a-zA-Z]|$)/.test(text)) return true;
+            if (/sqrt\s*\(\s*-|\\sqrt\{\s*-|\(-1\)\^\(?1\/2\)?/.test(text)) return true;
+            return false;
+        }
+
+        function solvr_is_safe_answer(value) {
+            return !solvr_has_non_real_marker(value);
+        }
+
+        function solvr_has_literal_zero_division(expr) {
+            let text = String(expr || '').replace(/\s+/g, '');
+            return /\/\(?[+-]?0+(?:\.0+)?\)?(?![\d.])/.test(text);
+        }
+
+        function solvr_math_expression(expr) {
+            return String(expr).replace(solvr_high_precision_constant_pattern, match => `(${solvr_high_precision_constants[match.toLowerCase()]})`);
+        }
+
+        function solvr_math_evaluate(expr) {
+            return solvr_math.evaluate(solvr_math_expression(expr));
+        }
+
+        function solvr_symbolic_constant_expression(expr) {
+            return String(expr)
+                .replace(/\btau\b(?!\s*\()/gi, '(2*pi)')
+                .replace(/\bphi\b(?!\s*\()/gi, '((1+sqrt(5))/2)')
+                .replace(/\bsqrt2\b(?!\s*\()/gi, 'sqrt(2)')
+                .replace(/\bsqrt3\b(?!\s*\()/gi, 'sqrt(3)')
+                .replace(/\bln2\b(?!\s*\()/gi, 'log(2)')
+                .replace(/\bln10\b(?!\s*\()/gi, 'log(10)');
+        }
+
+        function solvr_near_zero(value, tolerance = 1e-10) {
+            return Math.abs(value || 0) < tolerance;
+        }
+
+        function solvr_gcd(a, b) {
+            a = Math.abs(Math.round(a));
+            b = Math.abs(Math.round(b));
+            while (b) {
+                let t = b;
+                b = a % b;
+                a = t;
+            }
+            return a || 1;
+        }
+
+        function solvr_rational_number_tex(value, max_denominator = 1000, tolerance = 1e-10) {
+            let numeric = typeof value === 'number' ? value : Number(value && value.toString ? value.toString() : value);
+            if (!Number.isFinite(numeric)) return null;
+            if (Math.abs(numeric) < 1e-12) return '0';
+            if (Math.abs(numeric) > 1e6) return null;
+            let sign = numeric < 0 ? '-' : '';
+            let abs = Math.abs(numeric);
+            let nearest_integer = Math.round(abs);
+            if (Math.abs(abs - nearest_integer) < tolerance) return `${sign}${nearest_integer}`;
+
+            let best = null;
+            for (let denominator = 2; denominator <= max_denominator; denominator++) {
+                let numerator = Math.round(abs * denominator);
+                if (!numerator) continue;
+                let error = Math.abs(abs - numerator / denominator);
+                if (error < tolerance && (!best || denominator < best.denominator)) {
+                    let divisor = solvr_gcd(numerator, denominator);
+                    best = { numerator: numerator / divisor, denominator: denominator / divisor };
+                    if (best.denominator === denominator) break;
+                }
+            }
+            if (!best || best.denominator === 1) return best ? `${sign}${best.numerator}` : null;
+            return `${sign}\\frac{${best.numerator}}{${best.denominator}}`;
+        }
+
+        function solvr_clean_number(value, precision = 12) {
+            if (value === Infinity || value === 'Infinity') return '\\infty';
+            if (value === -Infinity || value === '-Infinity') return '-\\infty';
+
+            try {
+                let raw = String(value && value.toString ? value.toString() : value).trim();
+                if (/^-?Infinity$/i.test(raw)) return raw.startsWith('-') ? '-\\infty' : '\\infty';
+                let large = solvr_large_number_tex(raw, precision);
+                if (large) return large;
+                let numeric = typeof value === 'number' ? value : Number(raw);
+                if (!Number.isFinite(numeric)) return numeric > 0 ? '\\infty' : '-\\infty';
+                if (Math.abs(numeric) < 1e-12) numeric = 0;
+                let rational = solvr_rational_number_tex(numeric);
+                if (rational) return rational;
+                let formatted = solvr_math.format(numeric, { notation: 'auto', precision });
+                return solvr_large_number_tex(formatted, precision) || formatted.replace(/\.?0+(e|$)/, '$1').replace(/e\+?(-?)0*(\d+)/, '\\times 10^{$1$2}');
+            } catch (error) {
+                return String(value);
+            }
+        }
+
+        function solvr_large_number_tex(value, precision = 12) {
+            let text = String(value || '').trim().replace(/,/g, '');
+            let sci = text.match(/^(-?)(\d+(?:\.\d+)?)[eE]\+?(-?\d+)$/);
+            if (sci) {
+                let exponent = Number(sci[3]);
+                if (Math.abs(exponent) < 8) return null;
+                let digits = sci[2].replace('.', '').replace(/^0+/, '');
+                let kept = digits.slice(0, Math.max(1, precision));
+                let mantissa = kept.length === 1 ? kept : `${kept[0]}.${kept.slice(1)}`;
+                mantissa = mantissa.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+                if (!mantissa || mantissa === '1') return `${sci[1]}10^{${exponent}}`;
+                return `${sci[1]}${mantissa}\\times 10^{${exponent}}`;
+            }
+
+            let plain = text.match(/^(-?)(\d+)(?:\.(\d+))?$/);
+            if (!plain) return null;
+            let integer = plain[2].replace(/^0+(?=\d)/, '');
+            let decimal = plain[3] || '';
+            if (integer.length < 18) return null;
+            let digits = (integer + decimal).replace(/^0+/, '');
+            if (!digits) return '0';
+            let exponent = integer.length - 1;
+            let kept = digits.slice(0, Math.max(1, precision));
+            let mantissa = kept.length === 1 ? kept : `${kept[0]}.${kept.slice(1)}`;
+            mantissa = mantissa.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+            if (mantissa === '1') return `${plain[1]}10^{${exponent}}`;
+            return `${plain[1]}${mantissa}\\times 10^{${exponent}}`;
+        }
+
+        function solvr_bigint_scientific_is_exact(value, precision) {
+            let digits = solvr_bigint_abs(value).toString();
+            if (digits.length < solvr_scientific_digit_limit || digits.length <= precision) return true;
+            return /^0+$/.test(digits.slice(precision));
+        }
+
+        function solvr_bigint_abs(value) {
+            return value < 0n ? -value : value;
+        }
+
+        function solvr_bigint_digits(value) {
+            return solvr_bigint_abs(value).toString().length;
+        }
+
+        function solvr_bigint_checked(value) {
+            if (solvr_bigint_digits(value) > solvr_full_integer_digit_limit) throw new Error('integer too large');
+            return value;
+        }
+
+        function solvr_factorial_digit_estimate(n) {
+            if (n < 2) return 1;
+            if (n < 100000) {
+                let sum = 0;
+                for (let i = 2; i <= n; i++) sum += Math.log10(i);
+                return Math.floor(sum) + 1;
+            }
+            return Math.floor(n * (Math.log10(n / Math.E)) + Math.log10(2 * Math.PI * n) / 2) + 1;
+        }
+
+        function solvr_bigint_factorial(n) {
+            if (n < 0 || n > solvr_factorial_limit || solvr_factorial_digit_estimate(n) > solvr_full_integer_digit_limit) throw new Error('factorial too large');
+            let value = 1n;
+            for (let i = 2n; i <= BigInt(n); i++) value *= i;
+            return solvr_bigint_checked(value);
+        }
+
+        function solvr_log10_bigint_text(value) {
+            let text = solvr_bigint_abs(value).toString();
+            if (text === '0') return -Infinity;
+            let head = Number(text.slice(0, Math.min(16, text.length)));
+            return Math.log10(head) + text.length - Math.min(16, text.length);
+        }
+
+        function solvr_bigint_pow(base, exponent) {
+            if (exponent < 0n) throw new Error('negative exponent');
+            if (base === 0n && exponent === 0n) throw new Error('undefined power');
+            if (base !== 0n && base !== 1n && base !== -1n) {
+                let estimated_digits = Math.floor(solvr_log10_bigint_text(base) * Number(exponent)) + 1;
+                if (estimated_digits > solvr_full_integer_digit_limit) throw new Error('power too large');
+            }
+
+            let result = 1n;
+            let power = base;
+            let remaining = exponent;
+            while (remaining > 0n) {
+                if (remaining & 1n) result = solvr_bigint_checked(result * power);
+                remaining >>= 1n;
+                if (remaining > 0n) power = solvr_bigint_checked(power * power);
+            }
+            return solvr_bigint_checked(result);
+        }
+
+        function solvr_bigint_to_tex(value) {
+            let text = value.toString();
+            if (solvr_bigint_digits(value) < solvr_scientific_digit_limit) return text;
+            let scientific = solvr_large_number_tex(text, solvr_scientific_precision);
+            if (!scientific) return text;
+            return solvr_bigint_scientific_is_exact(value, solvr_scientific_precision)
+                ? scientific
+                : `\\approx ${scientific}`;
+        }
+
+        function solvr_integer_tokenize(expr) {
+            let text = String(expr || '').replace(/\s+/g, '');
+            if (!text || /[^0-9()+\-*/^!]/.test(text)) return null;
+            let tokens = [];
+            let index = 0;
+            while (index < text.length) {
+                let digit = text.slice(index).match(/^\d+/);
+                if (digit) {
+                    tokens.push({ type: 'number', value: BigInt(digit[0]) });
+                    index += digit[0].length;
+                } else {
+                    tokens.push({ type: text[index] });
+                    index++;
+                }
+            }
+            return tokens;
+        }
+
+        function solvr_try_bigint_integer_expression(expr) {
+            let tokens = solvr_integer_tokenize(expr);
+            if (!tokens) return null;
+            let index = 0;
+
+            function peek(type) {
+                return tokens[index] && tokens[index].type === type;
+            }
+
+            function take(type) {
+                if (!peek(type)) return false;
+                index++;
+                return true;
+            }
+
+            function parse_primary() {
+                if (take('(')) {
+                    let value = parse_expression();
+                    if (value === null || !take(')')) return null;
+                    return value;
+                }
+                if (tokens[index] && tokens[index].type === 'number') return tokens[index++].value;
+                return null;
+            }
+
+            function parse_unary() {
+                if (take('+')) return parse_unary();
+                if (take('-')) {
+                    let value = parse_unary();
+                    return value === null ? null : solvr_bigint_checked(-value);
+                }
+                return parse_primary();
+            }
+
+            function parse_factorial() {
+                let value = parse_unary();
+                if (value === null) return null;
+                while (take('!')) {
+                    if (value < 0n || value > BigInt(solvr_factorial_limit)) return null;
+                    value = solvr_bigint_factorial(Number(value));
+                }
+                return value;
+            }
+
+            function parse_power() {
+                let base = parse_factorial();
+                if (base === null) return null;
+                if (take('^')) {
+                    let exponent = parse_power();
+                    if (exponent === null || exponent < 0n) return null;
+                    base = solvr_bigint_pow(base, exponent);
+                }
+                return base;
+            }
+
+            function parse_term() {
+                let value = parse_power();
+                if (value === null) return null;
+                while (peek('*') || peek('/')) {
+                    if (take('*')) {
+                        let right = parse_power();
+                        if (right === null) return null;
+                        value = solvr_bigint_checked(value * right);
+                    } else if (take('/')) {
+                        let right = parse_power();
+                        if (right === null || right === 0n || value % right !== 0n) return null;
+                        value = solvr_bigint_checked(value / right);
+                    }
+                }
+                return value;
+            }
+
+            function parse_expression() {
+                let value = parse_term();
+                if (value === null) return null;
+                while (peek('+') || peek('-')) {
+                    if (take('+')) {
+                        let right = parse_term();
+                        if (right === null) return null;
+                        value = solvr_bigint_checked(value + right);
+                    } else if (take('-')) {
+                        let right = parse_term();
+                        if (right === null) return null;
+                        value = solvr_bigint_checked(value - right);
+                    }
+                }
+                return value;
+            }
+
+            try {
+                let value = parse_expression();
+                if (value === null || index !== tokens.length) return null;
+                return [solvr_bigint_to_tex(value)];
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function solvr_answer_tex(expr) {
+            let text = String(expr === undefined || expr === null ? '' : expr).trim();
+            if (!text || text === '[]' || !solvr_is_safe_answer(text)) return solvr_no_answer;
+            if (/^-?\d+(?:\.\d+)?(?:e[+-]?\d+)?$/i.test(text)) return solvr_clean_number(text, 14);
+            let tex = solvr_tex(text);
+            return solvr_is_safe_answer(tex) ? tex : solvr_no_answer;
+        }
+
+        function solvr_format_symbolic_text(text) {
+            return String(text)
+                .replace(/Infinity/g, '\\infty')
+                .replace(/\bpi\b/g, '\\pi')
+                .replace(/\btau\b/g, '\\tau')
+                .replace(/\bphi\b/g, '\\phi')
+                .replace(/\*?sqrt\(([^()]+)\)/g, '\\sqrt{$1}')
+                .replace(/\*/g, '\\cdot ');
+        }
+
+        function solvr_simplify_radical(value) {
+            let integer = Math.round(value);
+            if (Math.abs(value - integer) > 1e-12) return solvr_clean_number(Math.sqrt(value));
+            if (integer === 0) return '0';
+            if (integer === 1) return '1';
+
+            let outside = 1;
+            let inside = integer;
+            for (let factor = 2; factor * factor <= inside; factor++) {
+                while (inside % (factor * factor) === 0) {
+                    outside *= factor;
+                    inside /= factor * factor;
+                }
+            }
+
+            if (inside === 1) return solvr_clean_number(outside);
+            return `${outside === 1 ? '' : outside}\\sqrt{${inside}}`;
+        }
+
+        function solvr_fraction_from_pi_angle(angle) {
+            let normalized = angle.replace(/\s+/g, '');
+            if (normalized === '0') return 0;
+            if (normalized === 'pi') return 1;
+            if (normalized === '-pi') return -1;
+
+            let degree = normalized.match(/^(-?\d+(?:\.\d+)?)(?:deg|\u00b0)$/i);
+            if (degree) return Number(degree[1]) / 180;
+
+            let plain_number = normalized.match(/^-?\d+(?:\.\d+)?$/);
+            if (plain_number) {
+                let numeric = Number(normalized);
+                let common_degrees = new Set([0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330, 360, -30, -45, -60, -90, -120, -135, -150, -180, -210, -225, -240, -270, -300, -315, -330, -360]);
+                if (common_degrees.has(numeric)) return numeric / 180;
+            }
+
+            let direct = normalized.match(/^(-?)pi\/(\d+)$/);
+            if (direct) return (direct[1] === '-' ? -1 : 1) / Number(direct[2]);
+
+            let multiplied = normalized.match(/^(-?\d+)\*?pi\/(\d+)$/);
+            if (multiplied) return Number(multiplied[1]) / Number(multiplied[2]);
+
+            return null;
+        }
+
+        function solvr_exact_trig_value(name, fraction) {
+            if (fraction === null) return null;
+            let period = name === 'tan' ? 1 : 2;
+            if (name === 'sec') return solvr_reciprocal_exact(solvr_exact_trig_value('cos', fraction));
+            if (name === 'csc') return solvr_reciprocal_exact(solvr_exact_trig_value('sin', fraction));
+            if (name === 'cot') return solvr_reciprocal_exact(solvr_exact_trig_value('tan', fraction));
+            let reduced = ((fraction % period) + period) % period;
+            let key = Number(reduced).toFixed(12).replace(/\.?0+$/, '');
+            let sin_values = {
+                '0': '0',
+                '0.166666666667': '\\frac{1}{2}',
+                '0.25': '\\frac{\\sqrt{2}}{2}',
+                '0.333333333333': '\\frac{\\sqrt{3}}{2}',
+                '0.5': '1',
+                '0.666666666667': '\\frac{\\sqrt{3}}{2}',
+                '0.75': '\\frac{\\sqrt{2}}{2}',
+                '0.833333333333': '\\frac{1}{2}',
+                '1': '0',
+                '1.16666666667': '-\\frac{1}{2}',
+                '1.25': '-\\frac{\\sqrt{2}}{2}',
+                '1.33333333333': '-\\frac{\\sqrt{3}}{2}',
+                '1.5': '-1',
+                '1.66666666667': '-\\frac{\\sqrt{3}}{2}',
+                '1.75': '-\\frac{\\sqrt{2}}{2}',
+                '1.83333333333': '-\\frac{1}{2}'
+            };
+            let cos_values = {
+                '0': '1',
+                '0.166666666667': '\\frac{\\sqrt{3}}{2}',
+                '0.25': '\\frac{\\sqrt{2}}{2}',
+                '0.333333333333': '\\frac{1}{2}',
+                '0.5': '0',
+                '0.666666666667': '-\\frac{1}{2}',
+                '0.75': '-\\frac{\\sqrt{2}}{2}',
+                '0.833333333333': '-\\frac{\\sqrt{3}}{2}',
+                '1': '-1',
+                '1.16666666667': '-\\frac{\\sqrt{3}}{2}',
+                '1.25': '-\\frac{\\sqrt{2}}{2}',
+                '1.33333333333': '-\\frac{1}{2}',
+                '1.5': '0',
+                '1.66666666667': '\\frac{1}{2}',
+                '1.75': '\\frac{\\sqrt{2}}{2}',
+                '1.83333333333': '\\frac{\\sqrt{3}}{2}'
+            };
+            let tan_values = {
+                '0': '0',
+                '0.166666666667': '\\frac{\\sqrt{3}}{3}',
+                '0.25': '1',
+                '0.333333333333': '\\sqrt{3}',
+                '0.5': '\\text{undefined}',
+                '0.666666666667': '-\\sqrt{3}',
+                '0.75': '-1',
+                '0.833333333333': '-\\frac{\\sqrt{3}}{3}'
+            };
+
+            if (name === 'sin') return sin_values[key] || null;
+            if (name === 'cos') return cos_values[key] || null;
+            if (name === 'tan') return tan_values[key] || null;
+            return null;
+        }
+
+        function solvr_reciprocal_exact(value) {
+            let map = {
+                '0': '\\text{undefined}',
+                '1': '1',
+                '-1': '-1',
+                '\\frac{1}{2}': '2',
+                '-\\frac{1}{2}': '-2',
+                '\\frac{\\sqrt{2}}{2}': '\\sqrt{2}',
+                '-\\frac{\\sqrt{2}}{2}': '-\\sqrt{2}',
+                '\\frac{\\sqrt{3}}{2}': '\\frac{2\\sqrt{3}}{3}',
+                '-\\frac{\\sqrt{3}}{2}': '-\\frac{2\\sqrt{3}}{3}',
+                '\\frac{\\sqrt{3}}{3}': '\\sqrt{3}',
+                '-\\frac{\\sqrt{3}}{3}': '-\\sqrt{3}',
+                '\\sqrt{3}': '\\frac{\\sqrt{3}}{3}',
+                '-\\sqrt{3}': '-\\frac{\\sqrt{3}}{3}'
+            };
+            return map[value] || null;
+        }
+
+        function solvr_exact_expression_steps(term) {
+            let text = term.replace(/\s+/g, '');
+            let lower = text.toLowerCase();
+            let constants = {
+                pi: '\\pi',
+                tau: '\\tau',
+                e: 'e',
+                phi: '\\phi',
+                gamma: '\\gamma',
+                catalan: 'G',
+                sqrt2: '\\sqrt{2}',
+                sqrt3: '\\sqrt{3}',
+                ln2: '\\ln 2',
+                ln10: '\\ln 10',
+                apery: '\\zeta(3)',
+                plastic: '\\rho',
+                silver: '1+\\sqrt{2}',
+                glaisher: 'A',
+                khinchin: 'K',
+                omega: '\\Omega'
+            };
+            if (constants[lower]) return [constants[lower]];
+
+            let trig = lower.match(/^(sin|cos|tan|sec|csc|cot)\((.+)\)$/);
+            if (trig) {
+                let value = solvr_exact_trig_value(trig[1], solvr_fraction_from_pi_angle(trig[2]));
+                if (value) return [value];
+            }
+
+            let sqrt_match = lower.match(/^sqrt\((\d+)\)$/);
+            if (sqrt_match) return [solvr_simplify_radical(Number(sqrt_match[1]))];
+
+            let nth_match = lower.match(/^nthroot\(([^,]+),([^,]+)\)$/);
+            if (nth_match) {
+                let value = Number(solvr_math_evaluate(nth_match[1]));
+                let degree = Number(solvr_math_evaluate(nth_match[2]));
+                if (Number.isFinite(value) && Number.isFinite(degree) && degree !== 0) {
+                    if (degree === 2 && value >= 0) return [solvr_simplify_radical(value)];
+                    let root = Math.sign(value) * Math.pow(Math.abs(value), 1 / degree);
+                    if (Math.abs(root - Math.round(root)) < 1e-10) return [solvr_clean_number(Math.round(root))];
+                    return [`\\sqrt[${degree}]{${solvr_tex(nth_match[1])}}`];
+                }
+            }
+
+            let log_base_match = lower.match(/^log\((.+),(.+)\)$/);
+            if (log_base_match) {
+                let value = Number(solvr_math_evaluate(log_base_match[1]));
+                let base = Number(solvr_math_evaluate(log_base_match[2]));
+                if (value > 0 && base > 0 && base !== 1) {
+                    let result = Math.log(value) / Math.log(base);
+                    if (Math.abs(result - Math.round(result)) < 1e-10) return [solvr_clean_number(Math.round(result))];
+                }
+                return [`\\log_{${solvr_tex(log_base_match[2])}}\\left(${solvr_tex(log_base_match[1])}\\right)`];
+            }
+
+            let log_match = lower.match(/^log\((.+)\)$/);
+            if (log_match) {
+                if (log_match[1] === 'e') return ['1'];
+                return [`\\ln\\left(${solvr_tex(log_match[1])}\\right)`];
+            }
+
+            return null;
+        }
+
+        function solvr_tex(expr) {
+            if (expr === undefined || expr === null || String(expr).trim() === '' || String(expr).trim() === '[]') return solvr_no_answer;
+            try {
+                let tex = nerdamer(expr).toTeX().replace(/Infinity/g, '\\infty');
+                return tex && tex.trim() ? tex : solvr_no_answer;
+            } catch (error) {
+                let tex = solvr_format_symbolic_text(expr);
+                return tex && tex.trim() ? tex : solvr_no_answer;
+            }
+        }
+
+        function solvr_normalize_input(input) {
+            let normalized = String(input || '')
+                .trim()
+                .replace(/=<|\u2264/g, '<=')
+                .replace(/=>|\u2265/g, '>=')
+                .replace(/[\u221e]/g, 'Infinity')
+                .replace(/[\u03c0]/g, 'pi')
+                .replace(/[\u03c4]/g, 'tau')
+                .replace(/[\u03c6\u03d5]/g, 'phi')
+                .replace(/(-?\d+(?:\.\d+)?)\s*(?:degrees?)\b/gi, '$1deg')
+                .replace(/\b(infinity|inf)\b/gi, 'Infinity')
+                .replace(/\bln\s*\(/gi, 'log(')
+                .replace(/\blogn\s*\(\s*([^,]+?)\s*,\s*([^)]+?)\s*\)/gi, 'log($2,$1)')
+                .replace(/\blog([a-zA-Z0-9_.()+\-*/^]+)\s*\(\s*([^)]+?)\s*\)/gi, 'log($2,$1)')
+                .replace(/\broot\s*\(\s*([^,]+?)\s*,\s*([^)]+?)\s*\)/gi, 'nthroot($1,$2)')
+                .replace(/\bnroot\s*\(\s*([^,]+?)\s*,\s*([^)]+?)\s*\)/gi, 'nthroot($2,$1)')
+                .replace(/\b(?!nth)([a-zA-Z0-9_.()+\-*/^]+)\s*root\s*\(\s*([^)]+?)\s*\)/gi, 'nthroot($2,$1)')
+                .replace(/\b(\d+)\s*root\s*([a-zA-Z0-9_.()+\-*/^]+)\b/gi, 'nthroot($2,$1)')
+                .replace(/\bnroot(\d+)\s*\(\s*([^)]+?)\s*\)/gi, 'nthroot($2,$1)')
+                .replace(/\s+/g, ' ');
+            return solvr_insert_implicit_multiplication(normalized);
+        }
+
+        function solvr_insert_implicit_multiplication(input) {
+            let text = input.replace(/(\d)([a-zA-Z])/g, '$1*$2');
+            ['sin', 'cos', 'tan', 'sec', 'csc', 'cot', 'asin', 'acos', 'atan', 'sqrt', 'log', 'exp', 'abs', 'nthroot', 'sum', 'limit', 'diff', 'integrate'].forEach(name => {
+                text = text.replace(new RegExp(`\\b${name}\\*\\s*\\(`, 'gi'), `${name}(`);
+            });
+            text = text
+                .replace(/\b(p)\*i\b/g, 'pi')
+                .replace(/\b(t)\*au\b/g, 'tau')
+                .replace(/\b(p)\*hi\b/g, 'phi')
+                .replace(/(-?\d+(?:\.\d+)?)\*deg\b/gi, '$1deg');
+            return text;
+        }
+
+        function solvr_has_invalid_words(input) {
+            let stripped = input.replace(/\bd[a-zA-Z]\b/g, ' ').replace(/\b[a-zA-Z]\b/g, ' ');
+            let words = stripped.match(/[a-zA-Z]{2,}/g) || [];
+            return words.some(word => !solvr_known_words.has(word.toLowerCase()));
+        }
+
+        function solvr_split_equation(eq) {
+            let index = eq.indexOf('=');
+            return [eq.slice(0, index).trim(), (eq.slice(index + 1).trim() || '0')];
+        }
+
+        function solvr_parse_relation(input) {
+            let text = String(input || '').trim();
+            let parts = [];
+            let ops = [];
+            let depth = 0;
+            let start = 0;
+
+            for (let i = 0; i < text.length; i++) {
+                let ch = text[i];
+                if (ch === '(' || ch === '[' || ch === '{') depth++;
+                if (ch === ')' || ch === ']' || ch === '}') depth--;
+                if (depth !== 0 || (ch !== '<' && ch !== '>')) continue;
+
+                let op = ch;
+                let op_start = i;
+                if (text[i + 1] === '=') {
+                    op += '=';
+                    i++;
+                }
+
+                let piece = text.slice(start, op_start).trim();
+                if (!piece) return null;
+                parts.push(piece);
+                ops.push(op);
+                start = i + 1;
+            }
+
+            if (!ops.length) return null;
+            let tail = text.slice(start).trim();
+            if (!tail) return null;
+            parts.push(tail);
+            return { parts, ops };
+        }
+
+        function solvr_has_equation_operator(input) {
+            return solvr_count_equation_operators(input) > 0;
+        }
+
+        function solvr_count_equation_operators(input) {
+            let text = String(input || '');
+            let depth = 0;
+            let count = 0;
+            for (let i = 0; i < text.length; i++) {
+                let ch = text[i];
+                if (ch === '(' || ch === '[' || ch === '{') depth++;
+                if (ch === ')' || ch === ']' || ch === '}') depth--;
+                if (depth !== 0 || ch !== '=') continue;
+                let before = text[i - 1] || '';
+                let after = text[i + 1] || '';
+                if (before === '<' || before === '>' || before === '!' || before === '=' || after === '=' || after === '<' || after === '>') continue;
+                count++;
+            }
+            return count;
+        }
+
+        function solvr_unique(list) {
+            return [...new Set(list.filter(Boolean))];
+        }
+
+        function solvr_vars(expr) {
+            try {
+                return nerdamer(expr).variables().filter(v => !solvr_known_words.has(v.toLowerCase()));
+            } catch (error) {
+                return solvr_unique((String(expr).match(/\b[a-zA-Z]\b/g) || []).filter(v => !solvr_known_words.has(v)));
+            }
+        }
+
+        function solvr_expand_comma_equations(input) {
+            return input.replace(/([a-zA-Z](?:\s*,\s*[a-zA-Z])+)\s*=\s*([^ \t=]+)/g, (full, vars, value) => {
+                return vars.split(',').map(v => `${v.trim()}=${value}`).join(' ');
+            });
+        }
+
+        function solvr_beast_process(expr) {
+            let limit = solvr_parse_limit(expr);
+            if (limit) return `limit(${limit.expr}, ${limit.variable}, ${limit.point})`;
+            let derivative = solvr_parse_derivative(expr);
+            if (derivative) return `diff(${derivative.expr}, ${derivative.variable})`;
+            return expr
+                .replace(/sum\s+([a-zA-Z])\s*=\s*([^ \t]+)\s+(?:to|\.\.)\s+([^ \t]+)\s+(?:of\s+)?(.*)/gi, 'sum($4, $1, $2, $3)')
+                .replace(/d\/d([a-zA-Z])\s*\+?(.*)/gi, 'diff($2, $1)');
+        }
+
+        function solvr_eval_at(expr, variable, value) {
+            try {
+                let replaced = nerdamer(expr).sub(variable, `(${value})`).evaluate().text();
+                if (/Infinity|inf/i.test(replaced)) return replaced.includes('-') ? -Infinity : Infinity;
+                return Number(solvr_math_evaluate(replaced));
+            } catch (error) {
+                return NaN;
+            }
+        }
+
+        function solvr_strip_outer_parens(expr) {
+            let text = String(expr).trim();
+            while (text.startsWith('(') && text.endsWith(')')) {
+                let depth = 0;
+                let wraps = true;
+                for (let i = 0; i < text.length; i++) {
+                    if (text[i] === '(') depth++;
+                    if (text[i] === ')') depth--;
+                    if (depth === 0 && i < text.length - 1) wraps = false;
+                }
+                if (!wraps) break;
+                text = text.slice(1, -1).trim();
+            }
+            return text;
+        }
+
+        function solvr_split_top_level_fraction(expr) {
+            let text = solvr_strip_outer_parens(expr);
+            let depth = 0;
+            for (let i = 0; i < text.length; i++) {
+                if (text[i] === '(') depth++;
+                if (text[i] === ')') depth--;
+                if (text[i] === '/' && depth === 0) {
+                    return {
+                        numerator: solvr_strip_outer_parens(text.slice(0, i)),
+                        denominator: solvr_strip_outer_parens(text.slice(i + 1))
+                    };
+                }
+            }
+            return null;
+        }
+
+        function solvr_read_balanced(text, start_index) {
+            let depth = 0;
+            for (let i = start_index; i < text.length; i++) {
+                if (text[i] === '(') depth++;
+                if (text[i] === ')') depth--;
+                if (depth === 0) return text.slice(start_index + 1, i);
+            }
+            return '';
+        }
+
+        function solvr_collect_denominators(expr) {
+            let denominators = [];
+            for (let i = 0; i < expr.length; i++) {
+                if (expr[i] !== '/') continue;
+                let rest = expr.slice(i + 1).trimStart();
+                if (rest.startsWith('(')) {
+                    denominators.push(solvr_read_balanced(rest, 0));
+                } else {
+                    let token = rest.match(/^[a-zA-Z0-9_.^*+-]+/);
+                    if (token) denominators.push(token[0]);
+                }
+            }
+            return denominators;
+        }
+
+        function solvr_collect_domains(lhs, rhs, variable) {
+            let joined = `${lhs} ${rhs}`;
+            let domains = [];
+
+            solvr_collect_denominators(joined).forEach(denominator => {
+                if (!solvr_vars(denominator).includes(variable)) return;
+                let forbidden = solvr_solve_symbolic(`${denominator}=0`, variable);
+                forbidden.forEach(value => {
+                    domains.push({
+                        tex: `${variable} \\neq ${solvr_tex(value)}`,
+                        pass: candidate => Math.abs(solvr_eval_at(denominator, variable, candidate)) > 1e-9
+                    });
+                });
+            });
+
+            [...joined.matchAll(/\bsqrt\s*\(/gi)].forEach(match => {
+                let argument = solvr_read_balanced(joined, joined.indexOf('(', match.index));
+                if (solvr_vars(argument).includes(variable)) {
+                    domains.push({
+                        tex: `${solvr_tex(argument)} \\ge 0`,
+                        pass: candidate => solvr_eval_at(argument, variable, candidate) >= -1e-9
+                    });
+                }
+            });
+
+            return domains;
+        }
+
+        function solvr_candidate_is_valid(lhs, rhs, variable, candidate, domains) {
+            if (!domains.every(rule => rule.pass(candidate))) return false;
+            let left = solvr_eval_at(lhs, variable, candidate);
+            let right = solvr_eval_at(rhs, variable, candidate);
+            if (Number.isFinite(left) && Number.isFinite(right)) return Math.abs(left - right) < 1e-8;
+
+            try {
+                let residual = nerdamer(`(${lhs})-(${rhs})`).sub(variable, `(${candidate})`).expand().evaluate().simplify().text();
+                if (residual === '0') return true;
+                let numeric = Number(solvr_math_evaluate(residual));
+                return Number.isFinite(numeric) && Math.abs(numeric) < 1e-8;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        function solvr_solve_symbolic(eq, variable) {
+            let [lhs, rhs] = solvr_split_equation(eq);
+            try {
+                let solved = nerdamer.solve(`(${lhs})-(${rhs})`, variable);
+                let elements = solved.symbol && solved.symbol.elements ? solved.symbol.elements : [solved];
+                return elements.filter(el => el && el.text && el.text() !== '[]').map(el => el.text());
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function solvr_polynomial_coefficients(expr, variable) {
+            try {
+                let expanded = nerdamer(expr).expand().text();
+                let coeffs = [];
+                expanded.replace(/-/g, '+-').split('+').map(t => t.trim()).filter(Boolean).forEach(term => {
+                    let degree = 0;
+                    let coefficient = term;
+
+                    if (term.includes(variable)) {
+                        let degree_match = term.match(new RegExp(`${variable}\\^(\\d+)`));
+                        degree = degree_match ? Number(degree_match[1]) : 1;
+                        coefficient = term
+                            .replace(new RegExp(`\\*?${variable}(\\^\\d+)?`), '')
+                            .replace(/\*$/, '');
+                        if (coefficient === '' || coefficient === '+') coefficient = '1';
+                        if (coefficient === '-') coefficient = '-1';
+                    }
+
+                    coeffs[degree] = (coeffs[degree] || 0) + Number(solvr_math_evaluate(coefficient));
+                });
+
+                while (coeffs.length && Math.abs(coeffs[coeffs.length - 1] || 0) < 1e-10) coeffs.pop();
+                return coeffs.length ? coeffs : null;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function solvr_coefficients_to_tex(coeffs, variable) {
+            let parts = [];
+            for (let degree = coeffs.length - 1; degree >= 0; degree--) {
+                let coefficient = coeffs[degree] || 0;
+                if (Math.abs(coefficient) < 1e-10) continue;
+                let sign = coefficient < 0 ? '-' : '+';
+                let abs = Math.abs(coefficient);
+                let body = degree === 0
+                    ? solvr_clean_number(abs)
+                    : `${abs === 1 ? '' : solvr_clean_number(abs)}${variable}${degree === 1 ? '' : `^${degree}`}`;
+                parts.push({ sign, body });
+            }
+            if (!parts.length) return '0';
+            return parts.map((part, index) => index === 0
+                ? `${part.sign === '-' ? '-' : ''}${part.body}`
+                : ` ${part.sign} ${part.body}`).join('');
+        }
+
+        function solvr_eval_poly(coeffs, x) {
+            return coeffs.reduceRight((acc, coefficient) => acc * x + (coefficient || 0), 0);
+        }
+
+        function solvr_trim_coeffs(coeffs) {
+            let trimmed = coeffs.slice();
+            while (trimmed.length && solvr_near_zero(trimmed[trimmed.length - 1])) trimmed.pop();
+            return trimmed;
+        }
+
+        function solvr_normalize_real_roots(values, tolerance = 1e-8) {
+            let roots = values
+                .map(value => Number(value))
+                .filter(value => Number.isFinite(value))
+                .map(value => Math.abs(value - Math.round(value)) < tolerance ? Math.round(value) : value)
+                .sort((a, b) => a - b);
+            let unique = [];
+            roots.forEach(root => {
+                if (!unique.length || Math.abs(root - unique[unique.length - 1]) > tolerance) unique.push(root);
+            });
+            return unique;
+        }
+
+        function solvr_quadratic_roots_numeric(coeffs) {
+            let a = coeffs[2] || 0;
+            let b = coeffs[1] || 0;
+            let c = coeffs[0] || 0;
+            if (solvr_near_zero(a)) return solvr_near_zero(b) ? [] : [-c / b];
+            let d = b * b - 4 * a * c;
+            if (d < -1e-10) return [];
+            let safe = Math.sqrt(Math.max(0, d));
+            return solvr_normalize_real_roots([(-b + safe) / (2 * a), (-b - safe) / (2 * a)]);
+        }
+
+        function solvr_cubic_roots_numeric(coeffs) {
+            let a = coeffs[3] || 0;
+            let b = coeffs[2] || 0;
+            let c = coeffs[1] || 0;
+            let d = coeffs[0] || 0;
+            if (solvr_near_zero(a)) return solvr_solve_polynomial_roots_numeric(coeffs.slice(0, 3));
+
+            let A = b / a;
+            let B = c / a;
+            let C = d / a;
+            let p = B - A * A / 3;
+            let q = 2 * A * A * A / 27 - A * B / 3 + C;
+            let delta = (q / 2) ** 2 + (p / 3) ** 3;
+            let offset = A / 3;
+
+            if (solvr_near_zero(p)) return solvr_normalize_real_roots([solvr_real_cuberoot(-q) - offset]);
+
+            if (delta > 1e-10) {
+                let u = solvr_real_cuberoot(-q / 2 + Math.sqrt(delta));
+                let v = solvr_real_cuberoot(-q / 2 - Math.sqrt(delta));
+                return solvr_normalize_real_roots([u + v - offset]);
+            }
+
+            if (solvr_near_zero(delta)) {
+                let u = solvr_real_cuberoot(-q / 2);
+                return solvr_normalize_real_roots([2 * u - offset, -u - offset]);
+            }
+
+            let radius = 2 * Math.sqrt(-p / 3);
+            let angle = Math.acos(Math.max(-1, Math.min(1, (3 * q / (2 * p)) * Math.sqrt(-3 / p))));
+            return solvr_normalize_real_roots([0, 1, 2].map(k => radius * Math.cos((angle - 2 * Math.PI * k) / 3) - offset));
+        }
+
+        function solvr_biquadratic_roots_numeric(coeffs) {
+            if (coeffs.length !== 5 || !solvr_near_zero(coeffs[1] || 0) || !solvr_near_zero(coeffs[3] || 0)) return null;
+            let z_roots = solvr_solve_polynomial_roots_numeric([coeffs[0] || 0, coeffs[2] || 0, coeffs[4] || 0]);
+            let roots = [];
+            z_roots.forEach(root => {
+                if (root >= -1e-10) {
+                    let safe = Math.sqrt(Math.max(0, root));
+                    roots.push(safe);
+                    if (!solvr_near_zero(safe)) roots.push(-safe);
+                }
+            });
+            return solvr_normalize_real_roots(roots);
+        }
+
+        function solvr_bisect_poly(coeffs, left, right) {
+            let a = left;
+            let b = right;
+            let fa = solvr_eval_poly(coeffs, a);
+            let fb = solvr_eval_poly(coeffs, b);
+            for (let i = 0; i < 80; i++) {
+                let mid = (a + b) / 2;
+                let fm = solvr_eval_poly(coeffs, mid);
+                if (Math.abs(fm) < 1e-12) return mid;
+                if (fa * fm <= 0) {
+                    b = mid;
+                    fb = fm;
+                } else {
+                    a = mid;
+                    fa = fm;
+                }
+            }
+            return (a + b) / 2;
+        }
+
+        function solvr_scan_polynomial_roots(coeffs, min = -100, max = 100, step = 0.25) {
+            let roots = [];
+            let prev_x = min;
+            let prev_y = solvr_eval_poly(coeffs, prev_x);
+            for (let x = min + step; x <= max + 1e-12; x += step) {
+                let y = solvr_eval_poly(coeffs, x);
+                if (Number.isFinite(prev_y) && Math.abs(prev_y) < 1e-9) roots.push(prev_x);
+                if (Number.isFinite(prev_y) && Number.isFinite(y) && prev_y * y < 0) roots.push(solvr_bisect_poly(coeffs, prev_x, x));
+                prev_x = x;
+                prev_y = y;
+            }
+            if (Number.isFinite(prev_y) && Math.abs(prev_y) < 1e-9) roots.push(prev_x);
+            return solvr_normalize_real_roots(roots);
+        }
+
+        function solvr_bisect_expr(expr, variable, left, right) {
+            let a = left;
+            let b = right;
+            let fa = solvr_eval_at(expr, variable, a);
+            for (let i = 0; i < 90; i++) {
+                let mid = (a + b) / 2;
+                let fm = solvr_eval_at(expr, variable, mid);
+                if (!Number.isFinite(fm)) return null;
+                if (Math.abs(fm) < 1e-12) return mid;
+                if (fa * fm <= 0) {
+                    b = mid;
+                } else {
+                    a = mid;
+                    fa = fm;
+                }
+            }
+            return (a + b) / 2;
+        }
+
+        function solvr_find_numeric_roots(expr, variable, min = -50, max = 50, step = 0.25) {
+            let roots = [];
+            let prev_x = min;
+            let prev_y = solvr_eval_at(expr, variable, prev_x);
+
+            for (let x = min + step; x <= max + 1e-12; x += step) {
+                let y = solvr_eval_at(expr, variable, x);
+                if (Number.isFinite(prev_y) && Math.abs(prev_y) < 1e-9) roots.push(prev_x);
+                if (Number.isFinite(prev_y) && Number.isFinite(y) && prev_y * y < 0) {
+                    let root = solvr_bisect_expr(expr, variable, prev_x, x);
+                    if (root !== null) roots.push(root);
+                }
+                prev_x = x;
+                prev_y = y;
+            }
+
+            if (Number.isFinite(prev_y) && Math.abs(prev_y) < 1e-9) roots.push(prev_x);
+            return solvr_normalize_real_roots(roots);
+        }
+
+        function solvr_integer_factors(n) {
+            let abs = Math.abs(Math.round(n));
+            if (abs === 0) return [0];
+            let factors = [];
+            for (let i = 1; i * i <= abs; i++) {
+                if (abs % i === 0) {
+                    factors.push(i);
+                    if (i !== abs / i) factors.push(abs / i);
+                }
+            }
+            return factors.sort((a, b) => a - b);
+        }
+
+        function solvr_rational_candidates(coeffs) {
+            let constant = coeffs[0] || 0;
+            let leading = coeffs[coeffs.length - 1] || 1;
+            let numerators = solvr_integer_factors(constant);
+            let denominators = solvr_integer_factors(leading);
+            let candidates = [];
+
+            numerators.forEach(p => denominators.forEach(q => {
+                if (q === 0) return;
+                candidates.push(p / q, -p / q);
+            }));
+
+            return solvr_unique(candidates.map(x => solvr_clean_number(x))).map(Number).sort((a, b) => a - b);
+        }
+
+        function solvr_synthetic_divide(coeffs, root) {
+            let descending = [...coeffs].reverse();
+            let carry = descending[0];
+            let quotient_desc = [carry];
+            for (let i = 1; i < descending.length - 1; i++) {
+                carry = descending[i] + carry * root;
+                quotient_desc.push(carry);
+            }
+            let remainder = descending[descending.length - 1] + carry * root;
+            return { quotient: quotient_desc.reverse(), remainder };
+        }
+
+        function solvr_format_solution(variable, roots) {
+            let clean_roots = solvr_unique(roots.map(root => String(root === undefined || root === null ? '' : root).trim()).filter(solvr_is_safe_answer));
+            if (!clean_roots.length) return solvr_no_answer;
+            return clean_roots.map((root, index) => {
+                let label = clean_roots.length > 1 ? `${variable}_{${index + 1}}` : variable;
+                return `${label} = ${root}`;
+            }).join(' \\quad \\text{or} \\quad ');
+        }
+
+        function solvr_format_candidate_root(root) {
+            if (typeof root === 'number') return solvr_clean_number(root, 12);
+            let text = String(root === undefined || root === null ? '' : root).trim();
+            if (!text || text === '[]' || !solvr_is_safe_answer(text)) return '';
+            if (/^-?\d+(\.\d+)?(e[+-]?\d+)?$/i.test(text)) return solvr_clean_number(Number(text), 12);
+            let tex = solvr_tex(text);
+            return solvr_is_safe_answer(tex) ? tex : '';
+        }
+
+        function solvr_make_equation_strategy(label, confidence, steps, roots, complete = true) {
+            return { label, confidence, steps: steps || [], roots: roots || [], complete };
+        }
+
+        function solvr_validate_strategy(strategy, lhs, rhs, variable, domains) {
+            let roots = solvr_unique(strategy.roots.map(root => String(root === undefined || root === null ? '' : root).trim()).filter(Boolean));
+            let valid_roots = roots.filter(root => solvr_candidate_is_valid(lhs, rhs, variable, root, domains));
+            let formatted_roots = solvr_unique(valid_roots.map(solvr_format_candidate_root).filter(Boolean));
+            let invalid_count = roots.length - valid_roots.length;
+            let has_roots = formatted_roots.length > 0;
+            let viable = has_roots || (strategy.complete && roots.length === 0);
+            let score = strategy.confidence + (has_roots ? 30 : 0) - invalid_count * 30 - (strategy.complete ? 0 : 15);
+            return { ...strategy, roots, valid_roots, formatted_roots, invalid_count, viable, score };
+        }
+
+        function solvr_select_equation_strategy(strategies, lhs, rhs, variable, domains) {
+            let checked = strategies.map(strategy => strategy.label);
+            let judged = strategies
+                .map(strategy => solvr_validate_strategy(strategy, lhs, rhs, variable, domains))
+                .filter(strategy => strategy.viable)
+                .sort((a, b) => b.score - a.score || b.formatted_roots.length - a.formatted_roots.length);
+            return { checked, chosen: judged[0] || null };
+        }
+
+        function solvr_finalize_equation_strategy(selection, lhs, rhs, variable, domains) {
+            let domain_tex = domains.length ? ` \\quad \\mid \\text{Domain: } ${domains.map(d => d.tex).join(', ')}` : '';
+            if (!selection.chosen) {
+                return [
+                    `${solvr_tex(lhs)} = ${solvr_tex(rhs)}${domain_tex}`,
+                    solvr_format_solution(variable, [])
+                ];
+            }
+
+            let chosen = selection.chosen;
+            let steps = [
+                `${solvr_tex(lhs)} = ${solvr_tex(rhs)}${domain_tex}`
+            ];
+            let core = chosen.steps.slice();
+
+            if (chosen.roots.length) {
+                if (core.length) core = core.slice(0, -1);
+                core.push(solvr_format_solution(variable, chosen.formatted_roots));
+            } else if (!core.length || !/No real solution found|No answer found|All real numbers/.test(core[core.length - 1])) {
+                core.push(solvr_format_solution(variable, []));
+            }
+
+            return steps.concat(core);
+        }
+
+        function solvr_linear_steps(coeffs, variable) {
+            let b = coeffs[1] || 0;
+            let c = coeffs[0] || 0;
+            if (Math.abs(b) < 1e-12) return [Math.abs(c) < 1e-12 ? '\\text{All real numbers}' : solvr_no_answer];
+
+            let steps = [`${solvr_coefficients_to_tex(coeffs, variable)} = 0`];
+            if (Math.abs(c) > 1e-12) {
+                steps.push(`${solvr_clean_number(b)}${variable} = ${solvr_clean_number(-c)} \\quad \\mid ${c > 0 ? '-' : '+'} ${solvr_clean_number(Math.abs(c))}`);
+            }
+            if (Math.abs(b - 1) > 1e-12) {
+                if (Math.abs(b) < 1e-12) return ['\\text{Division by zero avoided}'];
+                steps[steps.length - 1] += ` \\quad \\mid \\div ${solvr_clean_number(b)}`;
+                steps.push(`${variable} = ${solvr_clean_number(-c / b)}`);
+            } else {
+                steps.push(`${variable} = ${solvr_clean_number(-c)}`);
+            }
+            return steps;
+        }
+
+        function solvr_quadratic_steps(coeffs, variable) {
+            let a = coeffs[2] || 0;
+            let b = coeffs[1] || 0;
+            let c = coeffs[0] || 0;
+            if (Math.abs(a) < 1e-12) return solvr_linear_steps(coeffs, variable);
+
+            let steps = [`${solvr_coefficients_to_tex(coeffs, variable)} = 0`];
+            if (Math.abs(a - 1) < 1e-12) {
+                let p = b;
+                let q = c;
+                let discriminant = (p / 2) ** 2 - q;
+                steps.push(`${variable} = -\\frac{p}{2} \\pm \\sqrt{\\left(\\frac{p}{2}\\right)^2 - q} \\quad \\mid p\\text{-}q\\text{ formula}`);
+                if (discriminant >= 0) {
+                    steps.push(`${variable} = ${solvr_clean_number(-p / 2)} \\pm \\sqrt{${solvr_clean_number(discriminant)}}`);
+                    steps.push(solvr_format_solution(variable, [
+                        solvr_clean_number(-p / 2 + Math.sqrt(discriminant)),
+                        solvr_clean_number(-p / 2 - Math.sqrt(discriminant))
+                    ]));
+                } else {
+                    steps.push(solvr_no_answer);
+                }
+                return steps;
+            }
+
+            let discriminant = b * b - 4 * a * c;
+            steps.push(`${variable} = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a} \\quad \\mid \\text{quadratic formula}`);
+            if (discriminant >= 0) {
+                steps.push(`${variable} = \\frac{-(${solvr_clean_number(b)}) \\pm \\sqrt{${solvr_clean_number(discriminant)}}}{${solvr_clean_number(2 * a)}}`);
+                steps.push(solvr_format_solution(variable, [
+                    solvr_clean_number((-b + Math.sqrt(discriminant)) / (2 * a)),
+                    solvr_clean_number((-b - Math.sqrt(discriminant)) / (2 * a))
+                ]));
+            } else {
+                steps.push(solvr_no_answer);
+            }
+            return steps;
+        }
+
+        function solvr_biquadratic_steps(coeffs, variable) {
+            if (coeffs.length !== 5 || Math.abs(coeffs[1] || 0) > 1e-10 || Math.abs(coeffs[3] || 0) > 1e-10) return null;
+            let z_coeffs = [coeffs[0] || 0, coeffs[2] || 0, coeffs[4] || 0];
+            let z_steps = solvr_quadratic_steps(z_coeffs, 'z');
+            let z_roots = solvr_solve_polynomial_roots(z_coeffs);
+            let x_roots = [];
+            z_roots.forEach(root => {
+                let numeric = Number(root);
+                if (numeric >= -1e-10) {
+                    x_roots.push(solvr_clean_number(Math.sqrt(Math.max(0, numeric))));
+                    if (Math.abs(numeric) > 1e-10) x_roots.push(solvr_clean_number(-Math.sqrt(numeric)));
+                }
+            });
+            return [
+                `${solvr_coefficients_to_tex(coeffs, variable)} = 0`,
+                `z = ${variable}^2 \\implies ${solvr_coefficients_to_tex(z_coeffs, 'z')} = 0`,
+                ...z_steps.slice(1),
+                `${variable}^2 = z`,
+                solvr_format_solution(variable, solvr_unique(x_roots))
+            ];
+        }
+
+        function solvr_real_cuberoot(value) {
+            return value < 0 ? -Math.pow(-value, 1 / 3) : Math.pow(value, 1 / 3);
+        }
+
+        function solvr_cubic_real_roots(coeffs) {
+            return solvr_solve_polynomial_roots_numeric(coeffs).map(root => solvr_clean_number(root));
+        }
+
+        function solvr_cubic_steps(coeffs, variable) {
+            if (coeffs.length !== 4) return null;
+
+            let a = coeffs[3] || 0;
+            let b = coeffs[2] || 0;
+            let c = coeffs[1] || 0;
+            let d = coeffs[0] || 0;
+            if (Math.abs(a) < 1e-12) return solvr_quadratic_steps(coeffs.slice(0, 3), variable);
+
+            let A = b / a;
+            let B = c / a;
+            let C = d / a;
+            let p = B - A * A / 3;
+            let q = 2 * A * A * A / 27 - A * B / 3 + C;
+            let delta = (q / 2) ** 2 + (p / 3) ** 3;
+            let roots = solvr_cubic_real_roots(coeffs);
+
+            let steps = [
+                `${solvr_coefficients_to_tex(coeffs, variable)} = 0`,
+                `${variable}=z-\\frac{${solvr_clean_number(A)}}{3} \\quad \\mid \\text{Cardano substitution}`,
+                `z^3 + ${solvr_clean_number(p)}z + ${solvr_clean_number(q)} = 0`,
+                `\\Delta=\\left(\\frac{q}{2}\\right)^2+\\left(\\frac{p}{3}\\right)^3=${solvr_clean_number(delta)}`
+            ];
+
+            if (delta >= -1e-12) {
+                steps.push(`z=\\sqrt[3]{-\\frac{q}{2}+\\sqrt{\\Delta}}+\\sqrt[3]{-\\frac{q}{2}-\\sqrt{\\Delta}}`);
+            } else {
+                steps.push(`z_k=2\\sqrt{-\\frac{p}{3}}\\cos\\left(\\frac{1}{3}\\arccos\\left(\\frac{3q}{2p}\\sqrt{-\\frac{3}{p}}\\right)-\\frac{2\\pi k}{3}\\right)`);
+            }
+
+            steps.push(solvr_format_solution(variable, solvr_unique(roots)));
+            return steps;
+        }
+
+        function solvr_solve_polynomial_roots_numeric(coeffs) {
+            let working = solvr_trim_coeffs(coeffs);
+            let degree = working.length - 1;
+            if (degree < 1) return [];
+            if (degree === 1) return solvr_near_zero(working[1]) ? [] : solvr_normalize_real_roots([-(working[0] || 0) / working[1]]);
+            if (degree === 2) return solvr_quadratic_roots_numeric(working);
+            if (degree === 3) return solvr_cubic_roots_numeric(working);
+
+            let biquadratic = solvr_biquadratic_roots_numeric(working);
+            if (biquadratic) return biquadratic;
+
+            let roots = [];
+            let guard = 0;
+            while (working.length > 4 && guard++ < 24) {
+                let root = solvr_rational_candidates(working)
+                    .sort((a, b) => Math.abs(a) - Math.abs(b))
+                    .find(candidate => Math.abs(solvr_eval_poly(working, candidate)) < 1e-8);
+                if (root === undefined) break;
+                roots.push(root);
+                working = solvr_trim_coeffs(solvr_synthetic_divide(working, root).quotient);
+            }
+
+            if (working.length <= 4) roots.push(...solvr_solve_polynomial_roots_numeric(working));
+            else roots.push(...solvr_scan_polynomial_roots(working));
+            return solvr_normalize_real_roots(roots);
+        }
+
+        function solvr_solve_polynomial_roots(coeffs) {
+            return solvr_solve_polynomial_roots_numeric(coeffs).map(root => solvr_clean_number(root));
+        }
+
+        function solvr_integerish(value) {
+            return Number.isFinite(value) && Math.abs(value - Math.round(value)) < 1e-10;
+        }
+
+        function solvr_polynomial_candidate_roots(coeffs) {
+            let trimmed = solvr_trim_coeffs(coeffs);
+            let degree = trimmed.length - 1;
+            if (degree === 2 && trimmed.every(solvr_integerish)) {
+                let a = Math.round(trimmed[2] || 0);
+                let b = Math.round(trimmed[1] || 0);
+                let c = Math.round(trimmed[0] || 0);
+                let d = b * b - 4 * a * c;
+                if (d < 0 || a === 0) return [];
+                let denominator = 2 * a;
+                if (d === 0) return [`(${-b})/(${denominator})`];
+                return [
+                    `(${-b}+sqrt(${d}))/(${denominator})`,
+                    `(${-b}-sqrt(${d}))/(${denominator})`
+                ];
+            }
+            return solvr_solve_polynomial_roots_numeric(trimmed);
+        }
+
+        function solvr_compare_zero(value, op, tolerance = 1e-10) {
+            if (op === '<') return value < -tolerance;
+            if (op === '>') return value > tolerance;
+            if (op === '<=') return value <= tolerance;
+            if (op === '>=') return value >= -tolerance;
+            return false;
+        }
+
+        function solvr_interval_all() {
+            return [{ left: -Infinity, right: Infinity, left_closed: false, right_closed: false }];
+        }
+
+        function solvr_interval_empty() {
+            return [];
+        }
+
+        function solvr_pick_interval_test(left, right) {
+            if (left === -Infinity && right === Infinity) return 0;
+            if (left === -Infinity) return right - 1;
+            if (right === Infinity) return left + 1;
+            return (left + right) / 2;
+        }
+
+        function solvr_intervals_merge(intervals) {
+            let sorted = intervals
+                .filter(item => item && item.left <= item.right)
+                .sort((a, b) => a.left - b.left || a.right - b.right);
+            let merged = [];
+            sorted.forEach(interval => {
+                let last = merged[merged.length - 1];
+                if (!last) {
+                    merged.push({ ...interval });
+                    return;
+                }
+                let overlaps = interval.left < last.right || (Math.abs(interval.left - last.right) < 1e-10 && (interval.left_closed || last.right_closed));
+                if (!overlaps) {
+                    merged.push({ ...interval });
+                    return;
+                }
+                if (interval.right > last.right || (Math.abs(interval.right - last.right) < 1e-10 && interval.right_closed)) {
+                    last.right = interval.right;
+                    last.right_closed = interval.right_closed;
+                }
+            });
+            return merged;
+        }
+
+        function solvr_intervals_intersect(left_intervals, right_intervals) {
+            let result = [];
+            left_intervals.forEach(a => {
+                right_intervals.forEach(b => {
+                    let left = Math.max(a.left, b.left);
+                    let right = Math.min(a.right, b.right);
+                    if (left > right + 1e-10) return;
+
+                    let left_closed = left === a.left ? a.left_closed : b.left_closed;
+                    if (Math.abs(a.left - b.left) < 1e-10 && left === a.left) left_closed = a.left_closed && b.left_closed;
+
+                    let right_closed = right === a.right ? a.right_closed : b.right_closed;
+                    if (Math.abs(a.right - b.right) < 1e-10 && right === a.right) right_closed = a.right_closed && b.right_closed;
+
+                    if (Math.abs(left - right) < 1e-10 && !(left_closed && right_closed)) return;
+                    result.push({ left, right, left_closed, right_closed });
+                });
+            });
+            return solvr_intervals_merge(result);
+        }
+
+        function solvr_value_to_interval_tex(value) {
+            if (value === -Infinity) return '-\\infty';
+            if (value === Infinity) return '\\infty';
+            return solvr_clean_number(value);
+        }
+
+        function solvr_intervals_to_tex(variable, intervals) {
+            if (!intervals.length) return `${variable} \\in \\varnothing`;
+            if (intervals.length === 1 && intervals[0].left === -Infinity && intervals[0].right === Infinity) return `${variable} \\in \\mathbb{R}`;
+            return `${variable} \\in ${intervals.map(interval => {
+                if (Math.abs(interval.left - interval.right) < 1e-10) return `\\{${solvr_clean_number(interval.left)}\\}`;
+                let left_bracket = interval.left_closed ? '[' : '(';
+                let right_bracket = interval.right_closed ? ']' : ')';
+                return `${left_bracket}${solvr_value_to_interval_tex(interval.left)}, ${solvr_value_to_interval_tex(interval.right)}${right_bracket}`;
+            }).join(' \\cup ')}`;
+        }
+
+        function solvr_polynomial_inequality_intervals(coeffs, op) {
+            let trimmed = solvr_trim_coeffs(coeffs);
+            if (trimmed.length <= 1) {
+                let value = trimmed[0] || 0;
+                return solvr_compare_zero(value, op) ? solvr_interval_all() : solvr_interval_empty();
+            }
+
+            let roots = solvr_solve_polynomial_roots_numeric(trimmed);
+            let points = [-Infinity, ...roots, Infinity];
+            let intervals = [];
+
+            for (let i = 0; i < points.length - 1; i++) {
+                let left = points[i];
+                let right = points[i + 1];
+                if (left !== -Infinity && right !== Infinity && Math.abs(left - right) < 1e-10) continue;
+                let test = solvr_pick_interval_test(left, right);
+                let value = solvr_eval_poly(trimmed, test);
+                if (!Number.isFinite(value) || !solvr_compare_zero(value, op)) continue;
+                intervals.push({
+                    left,
+                    right,
+                    left_closed: left !== -Infinity && (op === '<=' || op === '>=') && Math.abs(solvr_eval_poly(trimmed, left)) < 1e-7,
+                    right_closed: right !== Infinity && (op === '<=' || op === '>=') && Math.abs(solvr_eval_poly(trimmed, right)) < 1e-7
+                });
+            }
+
+            if (op === '<=' || op === '>=') {
+                roots.forEach(root => {
+                    if (Math.abs(solvr_eval_poly(trimmed, root)) < 1e-7) {
+                        intervals.push({ left: root, right: root, left_closed: true, right_closed: true });
+                    }
+                });
+            }
+
+            return solvr_intervals_merge(intervals);
+        }
+
+        function solvr_relation_to_tex(parts, ops) {
+            return parts.map((part, index) => {
+                let op = ops[index] ? ` ${ops[index].replace('<=', '\\le').replace('>=', '\\ge')} ` : '';
+                return `${solvr_tex(part)}${op}`;
+            }).join('');
+        }
+
+        function solvr_relation_steps(relation) {
+            let variables = solvr_unique(relation.parts.flatMap(solvr_vars));
+            if (!variables.length) {
+                try {
+                    let ok = relation.ops.every((op, index) => {
+                        let left = Number(solvr_math_evaluate(relation.parts[index]));
+                        let right = Number(solvr_math_evaluate(relation.parts[index + 1]));
+                        return solvr_compare_zero(left - right, op);
+                    });
+                    return [ok ? '\\text{True}' : '\\text{False}'];
+                } catch (error) {
+                    return [solvr_no_answer];
+                }
+            }
+
+            let variable = variables[0];
+            let intervals = solvr_interval_all();
+            let comparisons = [];
+
+            for (let i = 0; i < relation.ops.length; i++) {
+                let lhs = relation.parts[i];
+                let rhs = relation.parts[i + 1];
+                let op = relation.ops[i];
+                let coeffs = solvr_polynomial_coefficients(`(${lhs})-(${rhs})`, variable);
+                if (!coeffs) return [
+                    solvr_relation_to_tex(relation.parts, relation.ops),
+                    solvr_no_answer
+                ];
+                comparisons.push(`${solvr_coefficients_to_tex(coeffs, variable)} ${op.replace('<=', '\\le').replace('>=', '\\ge')} 0`);
+                intervals = solvr_intervals_intersect(intervals, solvr_polynomial_inequality_intervals(coeffs, op));
+            }
+
+            return [
+                solvr_relation_to_tex(relation.parts, relation.ops),
+                comparisons.join(' \\quad \\text{and} \\quad '),
+                solvr_intervals_to_tex(variable, intervals)
+            ];
+        }
+
+        function solvr_polynomial_steps(coeffs, variable) {
+            if (coeffs.length <= 2) return solvr_linear_steps(coeffs, variable);
+            if (coeffs.length === 3) return solvr_quadratic_steps(coeffs, variable);
+            if (coeffs.length === 4) return solvr_cubic_steps(coeffs, variable);
+
+            let biquadratic = solvr_biquadratic_steps(coeffs, variable);
+            if (biquadratic) return biquadratic;
+
+            let candidates = solvr_rational_candidates(coeffs);
+            let numeric_roots = solvr_solve_polynomial_roots_numeric(coeffs).map(root => solvr_clean_number(root));
+            let root = candidates.find(candidate => Math.abs(solvr_eval_poly(coeffs, candidate)) < 1e-8);
+            let steps = [
+                `${solvr_coefficients_to_tex(coeffs, variable)} = 0`,
+                `\\text{Rational-root candidates: } ${candidates.slice(0, 12).map(solvr_clean_number).join(', ')}`
+            ];
+
+            if (root === undefined) {
+                steps.push('\\text{No rational root found; using numeric root scan}');
+                steps.push(solvr_format_solution(variable, numeric_roots));
+                return steps;
+            }
+
+            let division = solvr_synthetic_divide(coeffs, root);
+            steps.push(`\\text{Guess } ${variable} = ${solvr_clean_number(root)} \\implies P(${solvr_clean_number(root)}) = 0`);
+            steps.push(`\\text{Horner scheme: remainder } ${solvr_clean_number(division.remainder)} \\implies P(${variable}) = (${variable} - ${solvr_clean_number(root)})(${solvr_coefficients_to_tex(division.quotient, variable)})`);
+            steps.push(...solvr_polynomial_steps(division.quotient, variable).slice(1));
+            steps.push(solvr_format_solution(variable, numeric_roots));
+            return steps;
+        }
+
+        function solvr_binomial_steps(lhs, rhs, variable) {
+            let match = solvr_strip_outer_parens(lhs).match(new RegExp(`^${variable}\\^(\\d+)$`));
+            if (!match) return null;
+            let exponent = Number(match[1]);
+            let value = Number(solvr_math_evaluate(rhs));
+            if (!Number.isFinite(value) || exponent < 2) return null;
+
+            let steps = [`${variable}^{${exponent}} = ${solvr_clean_number(value)} \\quad \\mid \\sqrt[${exponent}]{} `];
+            if (exponent % 2 === 0) {
+                if (value < 0) {
+                    steps.push(solvr_no_answer);
+                } else {
+                    let root = Math.pow(value, 1 / exponent);
+                    steps.push(solvr_format_solution(variable, [solvr_clean_number(root), solvr_clean_number(-root)]));
+                }
+            } else {
+                steps.push(`${variable} = ${solvr_clean_number(Math.sign(value) * Math.pow(Math.abs(value), 1 / exponent))}`);
+            }
+            return steps;
+        }
+
+        function solvr_binomial_roots(lhs, rhs, variable) {
+            let match = solvr_strip_outer_parens(lhs).match(new RegExp(`^${variable}\\^(\\d+)$`));
+            if (!match) return null;
+            let exponent = Number(match[1]);
+            let value = Number(solvr_math_evaluate(rhs));
+            if (!Number.isFinite(value) || exponent < 2) return null;
+            if (exponent % 2 === 0 && value < 0) return [];
+            let root = Math.sign(value) * Math.pow(Math.abs(value), 1 / exponent);
+            return exponent % 2 === 0 && !solvr_near_zero(root)
+                ? solvr_normalize_real_roots([root, -root])
+                : solvr_normalize_real_roots([root]);
+        }
+
+        function solvr_polynomial_method_label(coeffs) {
+            let degree = coeffs.length - 1;
+            if (degree === 1) return 'linear isolation';
+            if (degree === 2 && solvr_near_zero((coeffs[2] || 0) - 1)) return 'p-q quadratic formula';
+            if (degree === 2) return 'quadratic formula';
+            if (degree === 3) return 'Cardano cubic formula';
+            if (degree === 4 && solvr_biquadratic_roots_numeric(coeffs)) return 'z-substitution biquadratic';
+            if (degree > 3) return 'rational roots and Horner division';
+            return 'polynomial solve';
+        }
+
+        function solvr_equation_steps(eq) {
+            let [lhs, rhs] = solvr_split_equation(eq);
+            if (solvr_has_literal_zero_division(lhs) || solvr_has_literal_zero_division(rhs)) return [solvr_no_answer];
+            let variables = solvr_unique([...solvr_vars(lhs), ...solvr_vars(rhs)]);
+            if (!variables.length) return [`${solvr_tex(lhs)} = ${solvr_tex(rhs)}`];
+            let variable = variables[0];
+            let domains = solvr_collect_domains(lhs, rhs, variable);
+            let strategies = [];
+
+            let fraction = rhs === '0' ? solvr_split_top_level_fraction(lhs) : null;
+            if (fraction) {
+                let coeffs = solvr_polynomial_coefficients(fraction.numerator, variable);
+                if (coeffs) {
+                    strategies.push(solvr_make_equation_strategy(
+                        'fraction numerator rule',
+                        98,
+                        [
+                            `${solvr_tex(lhs)} = 0`,
+                            `${solvr_tex(fraction.numerator)} = 0`,
+                            ...solvr_polynomial_steps(coeffs, variable).slice(1)
+                        ],
+                        solvr_polynomial_candidate_roots(coeffs),
+                        true
+                    ));
+                }
+            }
+
+            let binomial = solvr_binomial_steps(lhs, rhs, variable);
+            let binomial_roots = solvr_binomial_roots(lhs, rhs, variable);
+            if (binomial && binomial_roots) {
+                strategies.push(solvr_make_equation_strategy(
+                    'binomial root extraction',
+                    96,
+                    binomial,
+                    binomial_roots,
+                    true
+                ));
+            }
+
+            let coeffs = solvr_polynomial_coefficients(`(${lhs})-(${rhs})`, variable);
+            if (coeffs) {
+                strategies.push(solvr_make_equation_strategy(
+                    solvr_polynomial_method_label(coeffs),
+                    92,
+                    [
+                        `${solvr_coefficients_to_tex(coeffs, variable)} = 0 \\quad \\mid \\text{bring all terms to the left}`,
+                        ...solvr_polynomial_steps(coeffs, variable).slice(1)
+                    ],
+                    solvr_polynomial_candidate_roots(coeffs),
+                    true
+                ));
+            }
+
+            let symbolic = solvr_solve_symbolic(eq, variable);
+            if (symbolic.length) {
+                strategies.push(solvr_make_equation_strategy(
+                    'symbolic solver',
+                    72,
+                    [
+                        `\\text{Solve } ${solvr_tex(lhs)} - \\left(${solvr_tex(rhs)}\\right) = 0`,
+                        solvr_format_solution(variable, symbolic.map(solvr_format_candidate_root))
+                    ],
+                    symbolic,
+                    false
+                ));
+            }
+
+            let numeric = solvr_find_numeric_roots(`(${lhs})-(${rhs})`, variable);
+            if (numeric.length) {
+                strategies.push(solvr_make_equation_strategy(
+                    'numeric bisection',
+                    55,
+                    [
+                        `\\text{Scan sign changes on } [-50, 50]`,
+                        solvr_format_solution(variable, numeric.map(root => solvr_clean_number(root)))
+                    ],
+                    numeric,
+                    false
+                ));
+            }
+
+            return solvr_finalize_equation_strategy(
+                solvr_select_equation_strategy(strategies, lhs, rhs, variable, domains),
+                lhs,
+                rhs,
+                variable,
+                domains
+            );
+        }
+
+        function solvr_split_terms(query) {
+            if (solvr_parse_relation(query)) return [query];
+            let calculus_pattern = /\b(?:lim|limit|int|defint|integrate|diff|derivative|deriv|derive|differentiate|sum)\b|d\s*\/\s*d|\bd\s+.+\/\s*d[a-zA-Z]\b|'\s*$/i;
+            let compact = query
+                .replace(/\s*=\s*/g, '=')
+                .replace(/\s*\+\s*/g, '+')
+                .replace(/\s*-\s*/g, '-')
+                .replace(/\s*\*\s*/g, '*')
+                .replace(/\s*\/\s*/g, '/');
+            let eq_count = solvr_count_equation_operators(compact);
+            if (calculus_pattern.test(query) || eq_count === 1) return [query];
+            return compact.split(/\s+/).filter(Boolean);
+        }
+
+        function solvr_assignment_chain_steps(eqs) {
+            let nodes = eqs.map(eq => {
+                let [lhs, rhs] = solvr_split_equation(eq);
+                if (!/^[a-zA-Z]$/.test(lhs)) return null;
+                return { name: lhs, rhs, deps: solvr_vars(rhs).filter(v => v !== lhs) };
+            });
+            if (nodes.some(node => !node)) return null;
+
+            let names = new Set(nodes.map(node => node.name));
+            if (nodes.some(node => node.deps.some(dep => !names.has(dep)))) return null;
+
+            let visited = new Set();
+            let visiting = new Set();
+            let order = [];
+            let by_name = new Map(nodes.map(node => [node.name, node]));
+
+            function solvr_visit(name) {
+                if (visited.has(name)) return true;
+                if (visiting.has(name)) return false;
+                visiting.add(name);
+                for (let dep of by_name.get(name).deps) {
+                    if (!solvr_visit(dep)) return false;
+                }
+                visiting.delete(name);
+                visited.add(name);
+                order.push(by_name.get(name));
+                return true;
+            }
+
+            for (let node of nodes) {
+                if (!solvr_visit(node.name)) return null;
+            }
+
+            let values = {};
+            return order.map(node => {
+                let substituted = node.rhs;
+                node.deps.forEach(dep => {
+                    substituted = nerdamer(substituted).sub(dep, `(${values[dep]})`).simplify().text();
+                });
+                let value = nerdamer(substituted).evaluate().simplify().text();
+                values[node.name] = value;
+                if (!node.deps.length) return `${node.name} = ${solvr_tex(value)}`;
+                let sub_text = node.deps.map(dep => `${dep}=${solvr_tex(values[dep])}`).join(', ');
+                return `\\text{Substitute } ${sub_text} \\text{ into } ${node.name} = ${solvr_tex(node.rhs)} \\implies ${node.name} = ${solvr_tex(value)}`;
+            });
+        }
+
+        function solvr_eval_symbolic_at(expr, variable, value) {
+            return nerdamer(expr).sub(variable, `(${value})`).evaluate().simplify().text();
+        }
+
+        function solvr_split_top_level_commas(text) {
+            let parts = [];
+            let depth = 0;
+            let start = 0;
+            for (let i = 0; i < text.length; i++) {
+                let ch = text[i];
+                if (ch === '(' || ch === '[' || ch === '{') depth++;
+                if (ch === ')' || ch === ']' || ch === '}') depth--;
+                if (ch === ',' && depth === 0) {
+                    parts.push(text.slice(start, i).trim());
+                    start = i + 1;
+                }
+            }
+            parts.push(text.slice(start).trim());
+            return parts.filter(part => part.length);
+        }
+
+        function solvr_parse_function_call(text, names) {
+            let source = String(text || '').trim();
+            let match = source.match(/^([a-zA-Z]+)\s*\(/);
+            if (!match) return null;
+            let name = match[1].toLowerCase();
+            if (!names.includes(name)) return null;
+            let open = source.indexOf('(', match[1].length);
+            let depth = 0;
+            for (let i = open; i < source.length; i++) {
+                let ch = source[i];
+                if (ch === '(') depth++;
+                if (ch === ')') depth--;
+                if (depth === 0) {
+                    if (source.slice(i + 1).trim()) return null;
+                    return { name, args: solvr_split_top_level_commas(source.slice(open + 1, i)) };
+                }
+            }
+            return null;
+        }
+
+        function solvr_parse_leading_integral_bounds(text) {
+            let source = String(text || '').trim();
+            let match = source.match(/^(?:defint|integrate|int)\s*\(/i);
+            if (!match) return null;
+            let open = source.indexOf('(', match[0].indexOf('('));
+            let depth = 0;
+            for (let i = open; i < source.length; i++) {
+                let ch = source[i];
+                if (ch === '(') depth++;
+                if (ch === ')') depth--;
+                if (depth === 0) {
+                    let args = solvr_split_top_level_commas(source.slice(open + 1, i));
+                    let rest = source.slice(i + 1).trim();
+                    let natural = rest.match(/^(.+?)\s*d([a-zA-Z])\s*$/i);
+                    if (args.length !== 2 || !rest) return null;
+                    if (!natural) {
+                        let expr = solvr_strip_outer_parens(rest);
+                        return {
+                            expr,
+                            variable: solvr_infer_variable(expr),
+                            start: args[0],
+                            end: args[1]
+                        };
+                    }
+                    return {
+                        expr: solvr_strip_outer_parens(natural[1].trim()),
+                        variable: natural[2],
+                        start: args[0],
+                        end: args[1]
+                    };
+                }
+            }
+            return null;
+        }
+
+        function solvr_parse_definite_integral(term) {
+            let text = String(term || '').trim();
+            let leading = solvr_parse_leading_integral_bounds(text);
+            if (leading) return leading;
+
+            let call = solvr_parse_function_call(text, ['defint', 'integrate', 'int']);
+            if (!call) return null;
+
+            if (call.args.length === 3) {
+                let first_vars = solvr_vars(call.args[0]);
+                let third_vars = solvr_vars(call.args[2]);
+                let bounds_first = first_vars.length === 0 && third_vars.length > 0;
+                let expr = solvr_strip_outer_parens(bounds_first ? call.args[2] : call.args[0]);
+                return {
+                    expr,
+                    variable: solvr_infer_variable(expr),
+                    start: bounds_first ? call.args[0] : call.args[1],
+                    end: bounds_first ? call.args[1] : call.args[2]
+                };
+            }
+
+            if (call.args.length !== 4) return null;
+
+            if (/^[a-zA-Z]$/.test(call.args[1])) {
+                return {
+                    expr: solvr_strip_outer_parens(call.args[0]),
+                    variable: call.args[1],
+                    start: call.args[2],
+                    end: call.args[3]
+                };
+            }
+
+            if (/^[a-zA-Z]$/.test(call.args[3])) {
+                return {
+                    expr: solvr_strip_outer_parens(call.args[2]),
+                    variable: call.args[3],
+                    start: call.args[0],
+                    end: call.args[1]
+                };
+            }
+
+            return null;
+        }
+
+        function solvr_parse_indefinite_integral(term) {
+            let text = String(term || '').trim();
+            let natural = text.match(/^(?:int|integrate)\s+(.+?)\s*d([a-zA-Z])\s*$/i);
+            if (natural) {
+                return {
+                    expr: solvr_strip_outer_parens(natural[1].trim()),
+                    variable: natural[2]
+                };
+            }
+
+            let call = solvr_parse_function_call(text, ['integrate', 'int']);
+            if (call && call.args.length === 2 && /^[a-zA-Z]$/.test(call.args[1])) {
+                return {
+                    expr: solvr_strip_outer_parens(call.args[0]),
+                    variable: call.args[1]
+                };
+            }
+
+            if (call && call.args.length === 1) {
+                let expr = solvr_strip_outer_parens(call.args[0]);
+                if (expr) return {
+                    expr,
+                    variable: solvr_infer_variable(expr)
+                };
+            }
+
+            let inferred = text.match(/^(?:int|integrate)\s+(.+)$/i);
+            if (inferred) {
+                let expr = solvr_strip_outer_parens(inferred[1].trim());
+                if (expr) return {
+                    expr,
+                    variable: solvr_infer_variable(expr)
+                };
+            }
+
+            return null;
+        }
+
+        function solvr_integral_result(expr, variable) {
+            let result = nerdamer(`integrate(${expr}, ${variable})`).expand().simplify();
+            let text = result.text();
+            if (!text || /integrate|undefined|NaN/i.test(text)) throw new Error('integral unavailable');
+            return result;
+        }
+
+        function solvr_definite_integral_steps(term) {
+            let parsed = solvr_parse_definite_integral(term);
+            if (!parsed) return null;
+            let { expr, variable, start, end } = parsed;
+
+            try {
+                let antiderivative = solvr_integral_result(expr, variable).text();
+                let upper = solvr_eval_symbolic_at(antiderivative, variable, end);
+                let lower = solvr_eval_symbolic_at(antiderivative, variable, start);
+                let result = nerdamer(`(${upper})-(${lower})`).evaluate().simplify().text();
+                return [
+                    `\\int_{${solvr_tex(start)}}^{${solvr_tex(end)}}\\left(${solvr_tex(expr)}\\right)\\,d${variable}`,
+                    `${solvr_tex(antiderivative)}\\Big|_{${solvr_tex(start)}}^{${solvr_tex(end)}}`,
+                    solvr_answer_tex(result)
+                ];
+            } catch (error) {
+                return [
+                    `\\int_{${solvr_tex(start)}}^{${solvr_tex(end)}}\\left(${solvr_tex(expr)}\\right)\\,d${variable}`,
+                    solvr_no_answer
+                ];
+            }
+        }
+
+        function solvr_integral_steps(term) {
+            let definite = solvr_definite_integral_steps(term);
+            if (definite) return definite;
+
+            let parsed = solvr_parse_indefinite_integral(term);
+            if (!parsed) return null;
+            let { expr, variable } = parsed;
+            let coeffs = solvr_polynomial_coefficients(expr, variable);
+            let input = `\\int \\left(${solvr_tex(expr)}\\right)\\,d${variable}`;
+
+            if (coeffs) {
+                let integral_coeffs = [0];
+                coeffs.forEach((coefficient, degree) => {
+                    integral_coeffs[degree + 1] = coefficient / (degree + 1);
+                });
+                return [
+                    `${input} \\quad \\mid \\int x^n dx = \\frac{x^{n+1}}{n+1}+C`,
+                    `${solvr_coefficients_to_tex(integral_coeffs, variable)} + C`
+                ];
+            }
+
+            let rule = null;
+            if (expr === `sin(${variable})`) rule = `-\\cos\\left(${variable}\\right)+C`;
+            if (expr === `cos(${variable})`) rule = `\\sin\\left(${variable}\\right)+C`;
+            if (expr === `1/${variable}` || expr === `${variable}^-1`) rule = `\\ln\\left|${variable}\\right|+C`;
+            if (expr === `exp(${variable})` || expr === `e^${variable}`) rule = `e^${variable}+C`;
+            if (rule) return [`${input} \\quad \\mid \\text{standard integral rule}`, rule];
+
+            try {
+                return [`${input}`, `${solvr_integral_result(expr, variable).toTeX()} + C`];
+            } catch (error) {
+                return [`${input}`, solvr_no_answer];
+            }
+        }
+
+        function solvr_infer_variable(expr) {
+            let vars = solvr_vars(expr);
+            if (vars.length === 1) return vars[0];
+            if (vars.includes('x')) return 'x';
+            return vars[0] || 'x';
+        }
+
+        function solvr_parse_derivative(term) {
+            let text = String(term || '').trim();
+            let prefix = text.match(/^d\s*\/\s*d([a-zA-Z])\s*(?:of\s+)?(.+)$/i);
+            if (prefix) return { expr: solvr_strip_outer_parens(prefix[2]), variable: prefix[1] };
+
+            let quotient = text.match(/^d\s*\(\s*(.+?)\s*\)\s*\/\s*d([a-zA-Z])$/i);
+            if (quotient) return { expr: solvr_strip_outer_parens(quotient[1]), variable: quotient[2] };
+
+            let loose_quotient = text.match(/^d\s+(.+?)\s*\/\s*d([a-zA-Z])$/i);
+            if (loose_quotient) return { expr: solvr_strip_outer_parens(loose_quotient[1]), variable: loose_quotient[2] };
+
+            let prime = text.match(/^(.+?)'\s*$/);
+            if (prime) {
+                let expr = solvr_strip_outer_parens(prime[1]);
+                return { expr, variable: solvr_infer_variable(expr) };
+            }
+
+            let call = solvr_parse_function_call(text, ['diff', 'derivative', 'deriv', 'derive', 'differentiate']);
+            if (call) {
+                if (call.args.length >= 2 && /^[a-zA-Z]$/.test(call.args[1])) {
+                    return { expr: solvr_strip_outer_parens(call.args[0]), variable: call.args[1] };
+                }
+                if (call.args.length >= 2 && /^[a-zA-Z]$/.test(call.args[0])) {
+                    return { expr: solvr_strip_outer_parens(call.args[1]), variable: call.args[0] };
+                }
+                if (call.args.length === 1) {
+                    let expr = solvr_strip_outer_parens(call.args[0]);
+                    return { expr, variable: solvr_infer_variable(expr) };
+                }
+            }
+
+            let wrt = text.match(/^(?:derivative|deriv|derive|differentiate)(?:\s+of)?\s+(.+?)\s+(?:with\s+respect\s+to|wrt|for|by)\s+([a-zA-Z])$/i);
+            if (wrt) return { expr: solvr_strip_outer_parens(wrt[1]), variable: wrt[2] };
+
+            let natural = text.match(/^(?:derivative|deriv|derive|differentiate)(?:\s+of)?\s+(.+)$/i);
+            if (natural) {
+                let expr = solvr_strip_outer_parens(natural[1]);
+                return { expr, variable: solvr_infer_variable(expr) };
+            }
+
+            return null;
+        }
+
+        function solvr_polynomial_derivative_tex(expr, variable) {
+            let coeffs = solvr_polynomial_coefficients(expr, variable);
+            if (!coeffs) return null;
+            let derivative = [];
+            coeffs.forEach((coefficient, degree) => {
+                if (degree > 0) derivative[degree - 1] = coefficient * degree;
+            });
+            return solvr_coefficients_to_tex(derivative, variable);
+        }
+
+        function solvr_derivative_result(expr, variable) {
+            let result = nerdamer(`diff(${expr}, ${variable})`).expand().simplify();
+            let text = result.text();
+            if (!text || /diff|derivative|undefined|NaN/i.test(text)) throw new Error('derivative unavailable');
+            return result;
+        }
+
+        function solvr_derivative_steps(term) {
+            let parsed = solvr_parse_derivative(term);
+            if (!parsed) return null;
+            let { expr, variable } = parsed;
+            expr = solvr_strip_outer_parens(expr);
+            if (!expr) return null;
+
+            let input = `\\frac{d}{d${variable}}\\left(${solvr_tex(expr)}\\right)`;
+            let polynomial = solvr_polynomial_derivative_tex(expr, variable);
+            if (polynomial !== null) {
+                return [
+                    `${input} \\quad \\mid \\frac{d}{dx}x^n=nx^{n-1}`,
+                    polynomial
+                ];
+            }
+
+            try {
+                let result = solvr_derivative_result(expr, variable);
+                return [
+                    input,
+                    `${result.toTeX()} \\quad \\mid \\text{power, product, chain, trig rules}`
+                ];
+            } catch (error) {
+                return [input, solvr_no_answer];
+            }
+        }
+
+        function solvr_sum_steps(term) {
+            let match = term.match(/sum\s+([a-zA-Z])\s*=\s*([^ \t]+)\s+(?:to|\.\.)\s+([^ \t]+)\s+(?:of\s+)?(.*)/i);
+            if (!match) return null;
+            let variable = match[1];
+            let start = match[2];
+            let end = match[3];
+            let expr = match[4];
+            let processed = solvr_beast_process(term);
+            try {
+                let result = nerdamer(processed).evaluate().text();
+                return [
+                    `\\sum_{${variable}=${start}}^{${end}}\\left(${solvr_tex(expr)}\\right)`,
+                    `${solvr_answer_tex(result)}`
+                ];
+            } catch (error) {
+                return [
+                    `\\sum_{${variable}=${start}}^{${end}}\\left(${solvr_tex(expr)}\\right)`,
+                    '\\text{Summation unavailable}'
+                ];
+            }
+        }
+
+        function solvr_parse_limit(term) {
+            let text = String(term || '').trim();
+            let call = solvr_parse_function_call(text, ['limit', 'lim']);
+            if (call) {
+                if (call.args.length === 3 && /^[a-zA-Z]$/.test(call.args[1])) {
+                    return {
+                        expr: solvr_strip_outer_parens(call.args[0]),
+                        variable: call.args[1],
+                        point: call.args[2]
+                    };
+                }
+
+                if (call.args.length === 2) {
+                    let vars = solvr_vars(call.args[0]);
+                    if (vars.length === 1) {
+                        return {
+                            expr: solvr_strip_outer_parens(call.args[0]),
+                            variable: vars[0],
+                            point: call.args[1]
+                        };
+                    }
+                }
+            }
+
+            let natural = text.match(/^(?:limit|lim)\s+([a-zA-Z])\s*(?:->|to|=)\s*([^ \t]+)\s+(?:of\s+)?(.+)$/i);
+            if (natural) {
+                return {
+                    expr: solvr_strip_outer_parens(natural[3].trim()),
+                    variable: natural[1],
+                    point: natural[2].trim()
+                };
+            }
+
+            let as_form = text.match(/^(?:limit|lim)\s+(.+?)\s+(?:as|for)\s+([a-zA-Z])\s*(?:->|to|=)\s*(.+)$/i);
+            if (as_form) {
+                return {
+                    expr: solvr_strip_outer_parens(as_form[1].trim()),
+                    variable: as_form[2],
+                    point: as_form[3].trim()
+                };
+            }
+
+            return null;
+        }
+
+        function solvr_limit_point_tex(point) {
+            let text = String(point || '').trim();
+            if (/^-?Infinity$/i.test(text)) return text.startsWith('-') ? '-\\infty' : '\\infty';
+            return solvr_tex(text);
+        }
+
+        function solvr_bad_symbolic_value(value) {
+            return !value || /undefined|NaN|\[\]|limit\(/i.test(String(value));
+        }
+
+        function solvr_infinite_symbolic_value(value) {
+            return /Infinity|inf/i.test(String(value));
+        }
+
+        function solvr_try_direct_limit(expr, variable, point, allow_infinity = false) {
+            if (/Infinity/i.test(point)) return null;
+            try {
+                let value = solvr_eval_symbolic_at(expr, variable, point);
+                if (solvr_bad_symbolic_value(value)) return null;
+                if (!allow_infinity && solvr_infinite_symbolic_value(value)) return null;
+                return value;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function solvr_try_nerdamer_limit(expr, variable, point) {
+            try {
+                let value = nerdamer(`limit((${expr}), ${variable}, ${point})`).evaluate().simplify().text();
+                if (solvr_bad_symbolic_value(value)) return null;
+                return value;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function solvr_lhopital_steps(input_tex, expr, variable, point) {
+            let current = expr;
+            let steps = [];
+            for (let index = 0; index < 6; index++) {
+                let fraction = solvr_split_top_level_fraction(current);
+                if (!fraction) return null;
+
+                let n0 = solvr_eval_at(fraction.numerator, variable, point);
+                let d0 = solvr_eval_at(fraction.denominator, variable, point);
+                let zero_zero = Number.isFinite(n0) && Number.isFinite(d0) && Math.abs(n0) < 1e-10 && Math.abs(d0) < 1e-10;
+                let inf_inf = !Number.isNaN(n0) && !Number.isNaN(d0) && !Number.isFinite(n0) && !Number.isFinite(d0);
+                if (!zero_zero && !inf_inf) return null;
+
+                let d_num = nerdamer(`diff(${fraction.numerator}, ${variable})`).simplify();
+                let d_den = nerdamer(`diff(${fraction.denominator}, ${variable})`).simplify();
+                current = `(${d_num.text()})/(${d_den.text()})`;
+                steps.push(`\\lim_{${variable}\\to ${solvr_limit_point_tex(point)}}\\frac{${d_num.toTeX()}}{${d_den.toTeX()}} \\quad \\mid \\text{L'Hopital}`);
+
+                let direct = solvr_try_direct_limit(current, variable, point, true);
+                if (direct !== null) {
+                    return [
+                        `${input_tex} \\quad \\mid \\text{indeterminate } ${zero_zero ? '\\frac{0}{0}' : '\\frac{\\infty}{\\infty}'}`,
+                        ...steps,
+                        solvr_answer_tex(direct)
+                    ];
+                }
+
+                let symbolic = solvr_try_nerdamer_limit(current, variable, point);
+                if (symbolic !== null) {
+                    return [
+                        `${input_tex} \\quad \\mid \\text{indeterminate } ${zero_zero ? '\\frac{0}{0}' : '\\frac{\\infty}{\\infty}'}`,
+                        ...steps,
+                        solvr_answer_tex(symbolic)
+                    ];
+                }
+            }
+            return null;
+        }
+
+        function solvr_numeric_limit_value(expr, variable, point) {
+            try {
+                let is_infinite = /Infinity/i.test(point);
+                let direction = /^-/.test(point) ? -1 : 1;
+                if (is_infinite) {
+                    let scales = [100, 1000, 10000, 100000].map(scale => scale * direction);
+                    let values = scales.map(scale => solvr_eval_at(expr, variable, scale)).filter(value => !Number.isNaN(value));
+                    if (values.length < 3) return null;
+                    let finite = values.filter(Number.isFinite);
+                    if (finite.length === values.length) {
+                        let tail = finite.slice(-3);
+                        let spread = Math.max(...tail) - Math.min(...tail);
+                        let base = Math.max(1, Math.abs(tail[tail.length - 1]));
+                        if (spread / base < 1e-8) return tail[tail.length - 1];
+                        if (tail.every(value => Math.abs(value) > 1e4) && Math.abs(tail[2]) > Math.abs(tail[1]) && Math.abs(tail[1]) > Math.abs(tail[0])) {
+                            return tail[2] > 0 ? Infinity : -Infinity;
+                        }
+                    }
+                    if (values.every(value => value === Infinity)) return Infinity;
+                    if (values.every(value => value === -Infinity)) return -Infinity;
+                    return null;
+                }
+
+                let center = Number(solvr_math_evaluate(point));
+                if (!Number.isFinite(center)) return null;
+                let widths = [1e-3, 1e-4, 1e-5, 1e-6];
+                let pairs = widths.map(width => {
+                    return {
+                        left: solvr_eval_at(expr, variable, center - width),
+                        right: solvr_eval_at(expr, variable, center + width)
+                    };
+                }).filter(pair => !Number.isNaN(pair.left) && !Number.isNaN(pair.right));
+                if (pairs.length < 3) return null;
+                let tail = pairs.slice(-3);
+                let all_finite = tail.every(pair => Number.isFinite(pair.left) && Number.isFinite(pair.right));
+                if (all_finite) {
+                    let values = tail.flatMap(pair => [pair.left, pair.right]);
+                    let average = values.reduce((sum, value) => sum + value, 0) / values.length;
+                    let spread = Math.max(...values) - Math.min(...values);
+                    if (spread / Math.max(1, Math.abs(average)) < 1e-6) return average;
+                }
+                if (tail.every(pair => pair.left === Infinity && pair.right === Infinity)) return Infinity;
+                if (tail.every(pair => pair.left === -Infinity && pair.right === -Infinity)) return -Infinity;
+                return null;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function solvr_limit_steps(term) {
+            let parsed = solvr_parse_limit(term);
+            if (!parsed) return null;
+            let { variable, point } = parsed;
+            let expr = parsed.expr.trim();
+            let input_tex = `\\lim_{${variable}\\to ${solvr_limit_point_tex(point)}}\\left(${solvr_tex(expr)}\\right)`;
+
+            let fraction = solvr_split_top_level_fraction(expr);
+            if (fraction && /Infinity/i.test(point)) {
+                let n_coeffs = solvr_polynomial_coefficients(fraction.numerator, variable);
+                let d_coeffs = solvr_polynomial_coefficients(fraction.denominator, variable);
+                if (n_coeffs && d_coeffs) {
+                    let n_deg = n_coeffs.length - 1;
+                    let d_deg = d_coeffs.length - 1;
+                    if (n_deg < d_deg) return [`${input_tex} \\quad \\mid \\text{degree numerator} < \\text{degree denominator}`, '0'];
+                    if (n_deg === d_deg) return [`${input_tex} \\quad \\mid \\text{leading coefficients}`, `${solvr_clean_number(n_coeffs[n_deg] / d_coeffs[d_deg])}`];
+                    return [`${input_tex} \\quad \\mid \\text{degree numerator} > \\text{degree denominator}`, '\\infty'];
+                }
+            }
+
+            let compact = expr.replace(/\s/g, '');
+            if (compact === `sin(${variable})/${variable}` && Number(point) === 0) {
+                return [`${input_tex} \\quad \\mid \\lim_{x\\to 0}\\frac{\\sin x}{x}=1`, '1'];
+            }
+            if (compact === `tan(${variable})/${variable}` && Number(point) === 0) {
+                return [`${input_tex} \\quad \\mid \\lim_{x\\to 0}\\frac{\\tan x}{x}=1`, '1'];
+            }
+
+            let direct = solvr_try_direct_limit(expr, variable, point);
+            if (direct !== null) return [`${input_tex} \\quad \\mid \\text{substitute } ${variable}=${solvr_limit_point_tex(point)}`, solvr_answer_tex(direct)];
+
+            if (fraction) {
+                let lhopital = solvr_lhopital_steps(input_tex, expr, variable, point);
+                if (lhopital) return lhopital;
+            }
+
+            let symbolic = solvr_try_nerdamer_limit(expr, variable, point);
+            if (symbolic !== null) return [`${input_tex}`, solvr_answer_tex(symbolic)];
+
+            let numeric = solvr_numeric_limit_value(expr, variable, point);
+            if (numeric !== null) return [`${input_tex}`, solvr_clean_number(numeric, 14)];
+
+            return [`${input_tex}`, solvr_no_answer];
+        }
+
+        function solvr_calculus_steps(term) {
+            return solvr_limit_steps(term) || solvr_integral_steps(term) || solvr_derivative_steps(term) || solvr_sum_steps(term);
+        }
+
+        function solvr_calculus_input_tex(term) {
+            let limit = solvr_parse_limit(term);
+            if (limit) return `\\lim_{${limit.variable}\\to ${solvr_limit_point_tex(limit.point)}}\\left(${solvr_tex(limit.expr)}\\right)`;
+
+            let definite = solvr_parse_definite_integral(term);
+            if (definite) return `\\int_{${solvr_tex(definite.start)}}^{${solvr_tex(definite.end)}}\\left(${solvr_tex(definite.expr)}\\right)\\,d${definite.variable}`;
+
+            let indefinite = solvr_parse_indefinite_integral(term);
+            if (indefinite) return `\\int\\left(${solvr_tex(indefinite.expr)}\\right)\\,d${indefinite.variable}`;
+
+            let derivative = solvr_parse_derivative(term);
+            if (derivative) return `\\frac{d}{d${derivative.variable}}\\left(${solvr_tex(derivative.expr)}\\right)`;
+
+            return null;
+        }
+
+        function solvr_preview_skeleton_tex(raw_input) {
+            let text = String(raw_input || '').trim().toLowerCase();
+            if (/^(int|integrate)$/.test(text)) return '\\int f(x)\\,dx';
+            if (/^(lim|limit)$/.test(text)) return '\\lim_{x\\to a} f(x)';
+            if (/^(diff|deriv|derive|derivative|differentiate)$/.test(text)) return '\\frac{d}{dx}f(x)';
+            if (/^sum$/.test(text)) return '\\sum_{x=a}^{b} f(x)';
+            return null;
+        }
+
+        function solvr_valid_expression_tex(expr) {
+            try {
+                let tex = nerdamer(expr).toTeX().replace(/Infinity/g, '\\infty');
+                return tex && tex.trim() && tex !== '[]' ? tex : null;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function solvr_expression_steps(term) {
+            if (solvr_has_literal_zero_division(term)) return [solvr_no_answer];
+
+            let exact = solvr_exact_expression_steps(term);
+            if (exact) return exact;
+
+            let exact_integer = solvr_try_bigint_integer_expression(term);
+            if (exact_integer) return exact_integer;
+
+            let symbolic_term = solvr_symbolic_constant_expression(term);
+
+            try {
+                if (nerdamer(symbolic_term).variables().length === 0) {
+                    let symbolic = nerdamer(symbolic_term).evaluate().text();
+                    if (!/^-?\d+(\.\d+)?(e[+-]?\d+)?$/i.test(symbolic)) {
+                        return [solvr_tex(symbolic)];
+                    }
+                    let value = solvr_math_evaluate(term);
+                    return [solvr_clean_number(value, 14)];
+                }
+            } catch (error) {}
+
+            try {
+                let variables = solvr_vars(term);
+                if (variables.length === 1) {
+                    let coeffs = solvr_polynomial_coefficients(term, variables[0]);
+                    if (coeffs && coeffs.length > 2) {
+                        let roots = solvr_solve_polynomial_roots(coeffs);
+                        return [
+                            `f(${variables[0]})=${solvr_tex(term)}`,
+                            `\\text{Roots: } ${roots.length ? roots.map(root => `(${root},0)`).join(' \\quad \\text{and} \\quad ') : '\\text{none found}'}`,
+                            `\\text{y-Intercept: } (0, ${solvr_clean_number(coeffs[0] || 0)})`
+                        ];
+                    }
+                }
+            } catch (error) {}
+
+            try {
+                let tex = nerdamer(symbolic_term).expand().simplify().toTeX();
+                return [tex && tex.trim() ? tex : solvr_no_answer];
+            } catch (error) {
+                return [solvr_no_answer];
+            }
+        }
+
+        function solvr_fix_visual_brackets(tex) {
+            let text = String(tex || '');
+            if (/\\in\b|\\cup\b/.test(text)) return text;
+            let left_parens = (text.match(/\(/g) || []).length + (text.match(/\\left\(/g) || []).length;
+            let right_parens = (text.match(/\)/g) || []).length + (text.match(/\\right\)/g) || []).length;
+            if (left_parens > right_parens && /\\right\]\s*$/.test(text)) return text.replace(/\\right\]\s*$/, '\\right)');
+            if (left_parens > right_parens && /\]\s*$/.test(text)) return text.replace(/\]\s*$/, ')');
+            return text;
+        }
+
+        function solvr_sanitize_steps(steps) {
+            return (steps && steps.length ? steps : [solvr_no_answer]).map(step => {
+                let clean = solvr_fix_visual_brackets(String(step === undefined || step === null ? '' : step).trim());
+                return clean && clean !== '[]' && solvr_is_safe_answer(clean) ? clean : solvr_no_answer;
+            });
+        }
+
+        function solvr_steps_to_tex(steps) {
+            let seen_steps = new Set();
+            let safe_steps = solvr_sanitize_steps(steps).filter(step => {
+                let key = step.replace(/^\\color\{white\}\{(.+)\}$/, '$1').replace(/\s+/g, ' ').trim();
+                if (seen_steps.has(key)) return false;
+                seen_steps.add(key);
+                return true;
+            });
+            let colored = safe_steps.map((step, index) => {
+                let finalish = index === safe_steps.length - 1;
+                return finalish && !step.startsWith('\\color') ? `\\color{white}{${step}}` : step;
+            });
+            let tex = colored.length === 1
+                ? colored[0]
+                : `\\begin{aligned}\n${colored.map((step, index) => `&${index + 1}.\\quad ${step}`).join(' \\\\\n')}\n\\end{aligned}`;
+            return solvr_fix_visual_brackets(tex.replace(/Infinity/g, '\\infty').replace(/10\^\{\+(\d+)\}/g, '10^{$1}'));
+        }
+
+        function solvr_input_tex(raw_input) {
+            let skeleton = solvr_preview_skeleton_tex(raw_input);
+            if (skeleton) return skeleton;
+
+            let query = solvr_expand_comma_equations(solvr_normalize_input(raw_input));
+            if (!query) return '';
+            if (/\bi\b/.test(query) || solvr_has_invalid_words(query)) return null;
+
+            try {
+                let exact = solvr_exact_expression_steps(solvr_beast_process(query));
+                if (exact && exact.length) return exact[exact.length - 1];
+
+                let calculus = solvr_calculus_input_tex(query);
+                if (calculus) return calculus;
+
+                let relation = solvr_parse_relation(query);
+                if (relation) return solvr_relation_to_tex(relation.parts, relation.ops);
+
+                if (solvr_has_equation_operator(query)) {
+                    let [lhs, rhs] = solvr_split_equation(query);
+                    let left = solvr_valid_expression_tex(lhs);
+                    let right = solvr_valid_expression_tex(rhs);
+                    return left && right ? `${left} = ${right}` : null;
+                }
+
+                return solvr_valid_expression_tex(solvr_beast_process(query));
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function solvr_estimate_degree(query) {
+            let degrees = [...String(query).matchAll(/\^[\s]*(\d+)/g)].map(match => Number(match[1]));
+            let has_variable = /(^|[^a-zA-Z])([a-zA-Z])([^a-zA-Z]|$)/.test(query.replace(/\b(pi|tau|phi|e)\b/gi, ''));
+            return Math.max(has_variable ? 1 : 0, ...degrees, 0);
+        }
+
+        function solvr_has_variable_function(query) {
+            return /\b(sin|cos|tan|sec|csc|cot|log|exp|sqrt|abs)\s*\([^)]*[a-zA-Z][^)]*\)/i.test(query.replace(/\b(pi|tau|phi|e|gamma|catalan)\b/gi, ''));
+        }
+
+        function solvr_is_simple_binomial_query(query) {
+            let compact = query.replace(/\s+/g, '');
+            return new RegExp('^[a-zA-Z]\\^\\d+=-?\\d+(?:\\.\\d+)?$').test(compact)
+                || new RegExp('^-?\\d+(?:\\.\\d+)?=[a-zA-Z]\\^\\d+$').test(compact);
+        }
+
+        function solvr_has_calculus_syntax(query) {
+            return /\b(?:lim|limit|int|defint|integrate|diff|derivative|deriv|derive|differentiate|sum)\b|d\s*\/\s*d|\bd\s+.+\/\s*d[a-zA-Z]\b|'\s*$/i.test(query);
+        }
+
+        function solvr_should_show_loading(raw_input) {
+            let query = solvr_expand_comma_equations(solvr_normalize_input(raw_input));
+            if (!query || solvr_has_invalid_words(query)) return false;
+            if (/\bi\b/.test(query)) return false;
+            if (solvr_exact_expression_steps(solvr_beast_process(query))) return false;
+            if (solvr_has_calculus_syntax(query)) return true;
+
+            let relation = solvr_parse_relation(query);
+            if (relation) {
+                return relation.parts.some(part => solvr_has_variable_function(part) || solvr_estimate_degree(part) > 2);
+            }
+
+            let equations = solvr_count_equation_operators(query);
+            if (!equations) return false;
+            if (equations > 1) return true;
+            if (solvr_is_simple_binomial_query(query)) return false;
+            if (solvr_has_variable_function(query)) return true;
+            return solvr_estimate_degree(query) > 2 || query.length > 80;
+        }
+
+        async function solvr_solve(raw_input) {
+            let query = solvr_expand_comma_equations(solvr_normalize_input(raw_input));
+            if (!query) return { ok: false, steps: ['\\text{Syntax Error}'] };
+            if (/\bi\b/.test(query)) return { ok: false, steps: ['\\text{Syntax Error}'] };
+            if (solvr_has_invalid_words(query)) return { ok: false, steps: ['\\text{Syntax Error}'] };
+
+            try {
+                let steps = [];
+                let terms = solvr_split_terms(query);
+                let equations = terms.filter(term => solvr_has_equation_operator(term) && !solvr_parse_relation(term));
+
+                if (equations.length > 1 && !solvr_has_calculus_syntax(query)) {
+                    steps = solvr_assignment_chain_steps(equations) || equations.flatMap(solvr_equation_steps);
+                } else {
+                    terms.forEach(term => {
+                        let calculus = solvr_calculus_steps(term);
+                        let relation = solvr_parse_relation(term);
+                        if (calculus) {
+                            steps.push(...calculus);
+                        } else if (relation) {
+                            steps.push(...solvr_relation_steps(relation));
+                        } else if (solvr_has_equation_operator(term)) {
+                            steps.push(...solvr_equation_steps(term));
+                        } else {
+                            steps.push(...solvr_expression_steps(solvr_beast_process(term)));
+                        }
+                    });
+                }
+
+                steps = solvr_sanitize_steps(steps);
+                return { ok: true, steps, tex: solvr_steps_to_tex(steps) };
+            } catch (error) {
+                return { ok: false, steps: ['\\text{Syntax Error}'], error };
+            }
+        }
+
+        function solvr_task_yield() {
+            return new Promise(resolve => {
+                if (typeof requestAnimationFrame === 'function') {
+                    requestAnimationFrame(() => setTimeout(resolve, 0));
+                } else {
+                    setTimeout(resolve, 0);
+                }
+            });
+        }
+
+        async function solvr_solve_deferred(raw_input) {
+            await solvr_task_yield();
+            return solvr_solve(raw_input);
+        }
+
+        window.solvr = {
+            solve: solvr_solve,
+            solve_deferred: solvr_solve_deferred,
+            steps_to_tex: solvr_steps_to_tex,
+            input_tex: solvr_input_tex,
+            tex: solvr_tex,
+            normalize_input: solvr_normalize_input,
+            should_show_loading: solvr_should_show_loading,
+            polynomial_coefficients: solvr_polynomial_coefficients,
+            polynomial_roots: solvr_solve_polynomial_roots_numeric,
+            rational_candidates: solvr_rational_candidates,
+            synthetic_divide: solvr_synthetic_divide,
+            parse_relation: solvr_parse_relation,
+            numeric_roots: solvr_find_numeric_roots
+        };
+    </script>
+
+    <script>
+        gsap.registerPlugin(TextPlugin);
+
+        const solvr_app_el = document.getElementById('app-container');
+        const solvr_input_el = document.getElementById('query');
+        const solvr_input_preview_el = document.getElementById('input-preview');
+        const solvr_output_el = document.getElementById('output');
+        const solvr_output_wrapper_el = document.getElementById('output-wrapper');
+        const solvr_loading_svg = '<svg class="solvr-loader" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><defs><filter id="SVGp0LL3caJ"><feGaussianBlur in="SourceGraphic" result="y" stdDeviation="1"/><feColorMatrix in="y" result="z" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 18 -7"/><feBlend in="SourceGraphic" in2="z"/></filter></defs><g filter="url(#SVGp0LL3caJ)"><circle cx="5" cy="12" r="4" fill="#888888"><animate attributeName="cx" calcMode="spline" dur="2s" keySplines=".36,.62,.43,.99;.79,0,.58,.57" repeatCount="indefinite" values="5;8;5"/></circle><circle cx="19" cy="12" r="4" fill="#888888"><animate attributeName="cx" calcMode="spline" dur="2s" keySplines=".36,.62,.43,.99;.79,0,.58,.57" repeatCount="indefinite" values="19;16;19"/></circle><animateTransform attributeName="transform" dur="0.75s" repeatCount="indefinite" type="rotate" values="0 12 12;360 12 12"/></g></svg>';
+
+        const solvr_frontend_examples = [
+            '2x + 4 = 10',
+            'x^2 - 5x + 6 = 0',
+            'x^2 = 27',
+            'x^5 = 32',
+            'x^3 - 3x + 1 = 0',
+            'x^4 - 5x^2 + 4 = 0',
+            'x^5 - x = 0',
+            'x/(x-2)=0',
+            'cos(x)=x',
+            'x <= 0',
+            '0 <= x <= 5',
+            'x^2 - 4 < 0',
+            'a = b + c b = d^2 c = 3 d = 2',
+            'sin(pi/3)',
+            'phi',
+            'log8(5)',
+            '5root(7)',
+            'int sin(x) dx',
+            'int(0, pi) sin(x) dx',
+            'limit x->0 sin(x)/x',
+            'sum x=1 to 10 x^2'
+        ];
+
+        let solvr_placeholder_index = Math.floor(Math.random() * solvr_frontend_examples.length);
+        let solvr_placeholder_text = solvr_frontend_examples[solvr_placeholder_index];
+        let solvr_placeholder_progress = { value: 0 };
+        let solvr_placeholder_running = false;
+        let solvr_solve_token = 0;
+        let solvr_last_input_preview_tex = '';
+
+        function solvr_set_empty_state(empty) {
+            solvr_app_el.classList.toggle('is-empty', empty);
+        }
+
+        function solvr_hide_input_preview() {
+            solvr_app_el.classList.remove('has-preview');
+            solvr_input_preview_el.innerHTML = '';
+        }
+
+        function solvr_render_input_preview() {
+            let query = solvr_input_el.value.trim();
+            if (!query) {
+                solvr_last_input_preview_tex = '';
+                solvr_hide_input_preview();
+                return;
+            }
+
+            try {
+                let tex = window.solvr.input_tex(query);
+                if (!tex) {
+                    return;
+                }
+                if (tex === solvr_last_input_preview_tex && solvr_app_el.classList.contains('has-preview')) return;
+                solvr_last_input_preview_tex = tex;
+                katex.render(tex, solvr_input_preview_el, { displayMode: true, throwOnError: false, strict: false });
+                solvr_app_el.classList.add('has-preview');
+            } catch (error) {
+                return;
+            }
+        }
+
+        function solvr_hide_scrollbars() {
+            solvr_output_wrapper_el.classList.remove('scrollbars-visible', 'scroll-x', 'scroll-y');
+        }
+
+        function solvr_update_scrollbars() {
+            solvr_hide_scrollbars();
+            requestAnimationFrame(() => {
+                let has_x = solvr_output_el.scrollWidth > solvr_output_wrapper_el.clientWidth + 2;
+                let has_y = solvr_output_el.scrollHeight > solvr_output_wrapper_el.clientHeight + 2;
+                if (has_x || has_y) {
+                    solvr_output_wrapper_el.classList.add('scrollbars-visible');
+                    if (has_x) solvr_output_wrapper_el.classList.add('scroll-x');
+                    if (has_y) solvr_output_wrapper_el.classList.add('scroll-y');
+                }
+            });
+        }
+
+        function solvr_scroll_answer_to_bottom() {
+            requestAnimationFrame(() => {
+                let max_scroll = solvr_output_wrapper_el.scrollHeight - solvr_output_wrapper_el.clientHeight;
+                if (max_scroll > 28) {
+                    gsap.to(solvr_output_wrapper_el, { scrollTop: max_scroll, duration: 0.8, ease: 'power2.out' });
+                }
+            });
+        }
+
+        function solvr_finish_reveal() {
+            solvr_output_el.style.clipPath = 'none';
+            solvr_update_scrollbars();
+            solvr_scroll_answer_to_bottom();
+        }
+
+        function solvr_render_loading() {
+            solvr_set_empty_state(false);
+            solvr_hide_scrollbars();
+            solvr_output_el.classList.add('loading');
+            solvr_output_el.style.clipPath = 'none';
+            solvr_output_el.style.opacity = 1;
+            solvr_output_el.style.transform = 'translateY(0)';
+            solvr_output_el.innerHTML = solvr_loading_svg;
+            solvr_output_el.querySelectorAll('animate, animateTransform').forEach(animation => {
+                try {
+                    if (animation.beginElement) animation.beginElement();
+                } catch (error) {}
+            });
+        }
+
+        function solvr_render_tex(tex) {
+            solvr_set_empty_state(false);
+            solvr_output_el.classList.remove('loading');
+            katex.render(tex, solvr_output_el, { displayMode: true, throwOnError: false, strict: false });
+            gsap.fromTo(
+                solvr_output_el,
+                { clipPath: 'inset(0 100% 0 0)', opacity: 0, y: 10 },
+                { clipPath: 'inset(0 0% 0 0)', opacity: 1, y: 0, duration: 1, ease: 'power3.out', onComplete: solvr_finish_reveal }
+            );
+        }
+
+        function solvr_render_error() {
+            solvr_render_tex('\\text{Syntax Error}');
+        }
+
+        function solvr_wait_for_paint() {
+            return new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        }
+
+        function solvr_animate_placeholder() {
+            if (solvr_placeholder_running || solvr_input_el.value.trim() !== '') return;
+            solvr_placeholder_running = true;
+            solvr_placeholder_text = solvr_frontend_examples[solvr_placeholder_index % solvr_frontend_examples.length];
+            solvr_placeholder_progress.value = 0;
+            solvr_input_el.setAttribute('placeholder', '');
+
+            gsap.to(solvr_placeholder_progress, {
+                value: solvr_placeholder_text.length,
+                duration: 1.5,
+                delay: 0.3,
+                ease: 'none',
+                onUpdate: () => {
+                    if (solvr_input_el.value.trim() === '') {
+                        solvr_input_el.setAttribute('placeholder', solvr_placeholder_text.substring(0, Math.floor(solvr_placeholder_progress.value)));
+                    }
+                },
+                onComplete: () => {
+                    solvr_placeholder_running = false;
+                    solvr_placeholder_index++;
+                    gsap.delayedCall(1.8, solvr_animate_placeholder);
+                }
+            });
+        }
+
+        function solvr_enter_editing_mode() {
+            solvr_solve_token++;
+            solvr_hide_scrollbars();
+            solvr_set_empty_state(true);
+            solvr_output_el.classList.remove('loading');
+            solvr_output_el.innerHTML = '';
+            solvr_output_el.style.opacity = 0;
+            solvr_output_el.style.clipPath = 'none';
+            solvr_output_wrapper_el.scrollTop = 0;
+            solvr_output_wrapper_el.scrollLeft = 0;
+            solvr_render_input_preview();
+            if (solvr_input_el.value.trim() === '') {
+                solvr_animate_placeholder();
+            }
+        }
+
+        solvr_input_el.addEventListener('input', () => {
+            solvr_enter_editing_mode();
+        });
+
+        solvr_input_el.addEventListener('focus', solvr_render_input_preview);
+        solvr_input_el.addEventListener('click', solvr_enter_editing_mode);
+
+        solvr_input_el.addEventListener('keydown', async (event) => {
+            if (event.key === 'Tab') {
+                event.preventDefault();
+                if (solvr_input_el.value.trim() === '') {
+                    solvr_input_el.value = solvr_placeholder_text;
+                    solvr_render_input_preview();
+                }
+                solvr_input_el.focus();
+                return;
+            }
+
+            if (event.key !== 'Enter') return;
+            let query = solvr_input_el.value.trim();
+            if (!query) return;
+
+            let token = ++solvr_solve_token;
+            solvr_hide_input_preview();
+            solvr_output_wrapper_el.scrollTop = 0;
+            solvr_output_wrapper_el.scrollLeft = 0;
+            let show_loading = window.solvr.should_show_loading(query);
+            if (show_loading) {
+                solvr_render_loading();
+                await solvr_wait_for_paint();
+            }
+
+            let result = await (show_loading && window.solvr.solve_deferred ? window.solvr.solve_deferred(query) : window.solvr.solve(query));
+            if (token !== solvr_solve_token || solvr_input_el.value.trim() === '') return;
+            if (!result.ok) {
+                solvr_render_error();
+                return;
+            }
+            solvr_render_tex(result.tex || window.solvr.steps_to_tex(result.steps));
+        });
+
+        window.addEventListener('resize', () => {
+            if (solvr_output_el.style.opacity !== '0') solvr_update_scrollbars();
+        });
+
+        document.addEventListener('click', event => {
+            if (event.target.tagName !== 'INPUT') solvr_input_el.focus();
+            solvr_render_input_preview();
+        });
+
+        solvr_animate_placeholder();
+    </script>
+</body>
+</html>
